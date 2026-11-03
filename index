@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT Request Portal</title>
+<meta name="theme-color" content="#0b2137">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231d5b93'/%3E%3Cpath d='M12 6v6l4 2' stroke='white' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem('otp.theme');document.documentElement.dataset.theme=t||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch(e){}</script>
+<style>
+  :root{
+    --bg:#eef1f6; --surface:#ffffff; --surface-2:#f6f8fb; --surface-3:#eef2f7;
+    --ink:#0c1a2a; --ink-2:#33455a; --muted:#6b7c91; --line:#dde4ec;
+    --brand:#123a63; --brand-2:#1d5b93; --brand-soft:#e8f0f9;
+    --accent:#e08a00; --accent-soft:#fff3da;
+    --ok:#157f3c; --ok-soft:#e6f4ea; --bad:#b3261e; --bad-soft:#fdeceb;
+    --warn:#8a5a00; --warn-soft:#fff3dc; --info:#0b6f8a;
+    --ring:#1d5b93; --rail:#0b2137;
+    --shadow-sm:0 1px 2px rgba(16,32,52,.06);
+    --shadow:0 10px 30px rgba(16,32,52,.10);
+    --radius:12px;
+  }
+  [data-theme="dark"]{
+    --bg:#0a1119; --surface:#101a24; --surface-2:#0c1520; --surface-3:#15222f;
+    --ink:#e9eff7; --ink-2:#c0cddd; --muted:#8ea0b4; --line:#22313f;
+    --brand:#5aa0d8; --brand-2:#3f7fb5; --brand-soft:#132639;
+    --accent:#f0b13c; --accent-soft:#3a2c11;
+    --ok:#4ec27f; --ok-soft:#0f2a1c; --bad:#f0736a; --bad-soft:#331513;
+    --warn:#e6b25a; --warn-soft:#33260f; --info:#59bcd6;
+    --ring:#7cb6e6; --rail:#08131f;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow:0 14px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  body.no-scroll{overflow:hidden}
+  button,input,select,textarea{font:inherit;color:inherit}
+  a{color:var(--brand-2)}
+  :focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:.92em;letter-spacing:-.01em}
+  .muted{color:var(--muted)}
+  .sub{color:var(--muted);font-size:12px;margin-top:2px}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .hide-sm{display:table-cell}
+  .ic{width:18px;height:18px;flex:0 0 auto}
+  .ic-sm{width:15px;height:15px}
+  .app{display:flex;min-height:100vh}
+
+  /* ---------- rail ---------- */
+  .rail{
+    width:238px;flex:0 0 238px;position:sticky;top:0;height:100vh;z-index:40;
+    background:linear-gradient(180deg,#0f2a44 0%,#0b2034 55%,#091a2b 100%);
+    color:#dbe7f3;display:flex;flex-direction:column;padding:16px 13px 14px;gap:16px;
+  }
+  .brand{display:flex;gap:10px;align-items:center;padding:2px 6px 8px}
+  .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5b93,#0e7490);display:grid;place-items:center;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  .brand-mark .ic{width:21px;height:21px}
+  .brand-name{font-size:14.5px;font-weight:800;letter-spacing:.01em;line-height:1.15;color:#fff}
+  .brand-sub{font-size:10px;color:#7f9ab3;text-transform:uppercase;letter-spacing:.13em;margin-top:2px;font-weight:700}
+  .nav{display:flex;flex-direction:column;gap:3px}
+  .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#5f7c96;font-weight:700;padding:12px 12px 4px}
+  .nav-item{
+    display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;
+    color:#a9c0d6;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid transparent;
+    background:none;text-align:left;width:100%;transition:background .15s,color .15s;
+  }
+  .nav-item .ic{opacity:.85}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.10)}
+  .nav-item.active .ic{opacity:1;color:#8ec5ff}
+  .nav-badge{margin-left:auto;background:var(--accent);color:#231a00;font-size:11px;font-weight:800;padding:1px 7px;border-radius:99px;line-height:1.5}
+  .rail-foot{margin-top:auto;font-size:11px;color:#6f8ba4;padding:12px 8px 2px;border-top:1px solid rgba(255,255,255,.09);line-height:1.5}
+  .rail-foot b{color:#b9cfe2;font-weight:700}
+
+  /* ---------- shell / topbar ---------- */
+  .shell{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{
+    position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;gap:16px;align-items:center;
+    padding:13px 26px;background:var(--surface);border-bottom:1px solid var(--line);
+  }
+  .topbar h1{font-size:19px;margin:0;letter-spacing:-.02em;font-weight:750}
+  .topbar .crumb{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .demo-pill{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent);padding:4px 8px;border-radius:7px}
+  .icon-btn{
+    width:36px;height:36px;display:inline-grid;place-items:center;border-radius:9px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s;
+  }
+  .icon-btn:hover{background:var(--surface-2);color:var(--ink)}
+  .icon-btn.danger:hover{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+  .user-chip{display:flex;align-items:center;gap:9px;padding:4px 4px 4px 5px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2);flex:0 0 auto}
+  .avatar{width:31px;height:31px;border-radius:8px;display:grid;place-items:center;background:var(--brand-2);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.03em;flex:0 0 auto}
+  .user-meta{display:flex;flex-direction:column;line-height:1.2;min-width:0;flex:0 0 auto}
+  .user-meta b{font-size:12.5px;font-weight:700;white-space:nowrap}
+  .user-meta span{font-size:10.5px;color:var(--muted);white-space:nowrap;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+  .role-switch{
+    appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;
+    font-size:11.5px;font-weight:700;padding:6px 24px 6px 8px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7c91' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 7px center;
+  }
+
+  main{padding:22px 26px 64px;width:100%;max-width:1420px;margin:0 auto;outline:none}
+
+  /* ---------- primitives ---------- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px 0}
+  .card-head h2{font-size:13.5px;margin:0;font-weight:750;letter-spacing:-.01em}
+  .card-head .hint{font-size:11.5px;color:var(--muted)}
+  .card-pad{padding:14px 16px 16px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);font-size:13px;font-weight:650;padding:8px 13px;border-radius:9px;
+    cursor:pointer;transition:background .15s,border-color .15s,transform .06s;white-space:nowrap;text-decoration:none;
+  }
+  .btn:hover{background:var(--surface-2);border-color:var(--muted)}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+  .btn-primary:hover{background:var(--brand);border-color:var(--brand)}
+  .btn-danger{background:var(--bad);border-color:var(--bad);color:#fff}
+  .btn-danger:hover{filter:brightness(1.06)}
+  .btn-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+  .btn-ghost{border-color:transparent;background:transparent}
+  .btn-ghost:hover{background:var(--surface-2)}
+  .btn-sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+  [data-theme="dark"] .btn-primary{background:#1f5f96;border-color:#1f5f96;color:#fff}
+  [data-theme="dark"] .btn-primary:hover{background:#174c79;border-color:#174c79}
+  [data-theme="dark"] .btn-danger{background:#9e1f18;border-color:#9e1f18;color:#fff}
+  [data-theme="dark"] .btn-danger:hover{background:#b3261e;border-color:#b3261e}
+  .btn .ic{width:16px;height:16px}
+  .link{border:0;background:none;padding:0;color:var(--brand-2);font-weight:700;cursor:pointer;text-align:left}
+  .link:hover{text-decoration:underline}
+
+  .field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .field label{font-size:11.5px;font-weight:700;color:var(--ink-2);letter-spacing:.01em}
+  .field .req{color:var(--bad)}
+  .input,select.input,textarea.input,select,textarea{
+    width:100%;background:var(--surface);border:1px solid var(--line);border-radius:9px;
+    padding:8px 10px;font-size:13px;color:var(--ink);transition:border-color .15s,box-shadow .15s;min-height:36px;
+  }
+  select{
+    appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7c91' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+  }
+  textarea{resize:vertical;min-height:88px;line-height:1.5}
+  .input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 18%,transparent)}
+  .help{font-size:11px;color:var(--muted);margin:1px 0 0}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:13px 14px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:13px 14px}
+  .span-2{grid-column:span 2}
+
+  .alert{display:flex;gap:10px;padding:11px 13px;border-radius:10px;font-size:12.5px;margin-bottom:14px;border:1px solid transparent}
+  .alert.bad{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 25%,transparent)}
+  .alert.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 25%,transparent)}
+  .alert ul{margin:5px 0 0;padding-left:18px}
+  .alert strong{font-weight:750}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:750;padding:3px 8px;border-radius:99px;border:1px solid transparent;white-space:nowrap;letter-spacing:.01em}
+  .pill.approved{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
+  .pill.pending{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 22%,transparent)}
+  .pill.rejected{background:var(--bad-soft);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 22%,transparent)}
+  .pill .dot{width:6px;height:6px;border-radius:99px;background:currentColor}
+  .tag{display:inline-block;font-size:11px;font-weight:650;color:var(--ink-2);background:var(--surface-3);border-radius:6px;padding:2px 7px}
+
+  /* ---------- kpi / dashboard ---------- */
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .page-head h2{font-size:16px;margin:0;letter-spacing:-.015em}
+  .page-head p{margin:3px 0 0;color:var(--muted);font-size:12.5px}
+  .page-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:13px;margin-bottom:16px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow-sm)}
+  .kpi-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:10.5px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+  .kpi-top .ic{width:16px;height:16px;opacity:.6}
+  .kpi .val{font-size:26px;font-weight:800;letter-spacing:-.025em;margin-top:7px;font-variant-numeric:tabular-nums;line-height:1.1}
+  .kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .kpi .sub b{color:var(--ok);font-weight:700}
+  .kpi.accent{border-left:3px solid var(--accent)}
+
+  .dash-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-bottom:14px}
+  .stack-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+  .bars{display:flex;flex-direction:column;gap:10px;padding:14px 16px 16px}
+  .bar-row{display:grid;grid-template-columns:104px 1fr 52px;gap:10px;align-items:center;font-size:12.5px}
+  .bar-name{color:var(--ink-2);font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-track{display:block;height:9px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+  .bar-fill{display:block;height:9px;border-radius:99px;background:linear-gradient(90deg,var(--brand-2),var(--brand));transition:width .4s ease}
+  .bar-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink-2)}
+  .stack{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--surface-3);margin:4px 0 12px}
+  .stack span{height:100%}
+  .stack .s-ok{background:var(--ok)} .stack .s-pend{background:var(--accent)} .stack .s-bad{background:var(--bad)}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink-2)}
+  .legend b{font-variant-numeric:tabular-nums}
+  .legend i{width:8px;height:8px;border-radius:99px;display:inline-block;margin-right:5px;vertical-align:1px}
+
+  .activity{list-style:none;margin:0;padding:8px 16px 14px;display:flex;flex-direction:column}
+  .activity li{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .activity li:first-child{border-top:0}
+  .act-dot{width:8px;height:8px;border-radius:99px;margin-top:6px;flex:0 0 auto;background:var(--muted)}
+  .act-dot.approved{background:var(--ok)} .act-dot.rejected{background:var(--bad)} .act-dot.submitted{background:var(--brand-2)}
+  .activity .meta{color:var(--muted);font-size:11px;margin-top:1px}
+
+  /* ---------- tables ---------- */
+  .table-wrap{overflow:auto}
+  .tbl{width:100%;border-collapse:collapse;font-size:12.8px}
+  .tbl th{
+    text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+    font-weight:750;padding:9px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  .tbl td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .tbl tbody tr:last-child td{border-bottom:0}
+  .tbl tbody tr:hover{background:var(--surface-2)}
+  .tbl th.num,.tbl td.num{text-align:right}
+  .tbl .strong{font-weight:700}
+  .tbl .mono{white-space:nowrap}
+  .tbl .empty-cell{text-align:center;color:var(--muted);padding:26px 12px;font-size:12.5px}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .toolbar .field{flex:1 1 150px;max-width:230px}
+  .toolbar .field .input,.toolbar .field select{min-height:34px;padding-top:6px;padding-bottom:6px}
+  .toolbar .spacer{flex:1}
+  .pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+  .pager-btns{display:flex;gap:6px}
+  .approval-dots{display:inline-flex;gap:4px;align-items:center}
+  .adot{width:9px;height:9px;border-radius:99px;background:var(--surface-3);border:1px solid var(--line)}
+  .adot.approved{background:var(--ok);border-color:var(--ok)}
+  .adot.rejected{background:var(--bad);border-color:var(--bad)}
+  .adot.pending{background:var(--accent);border-color:var(--accent)}
+
+  /* ---------- forms ---------- */
+  .form-layout{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+  .form-stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .summary{position:sticky;top:80px}
+  .sum-line{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .sum-line:last-of-type{border-bottom:0}
+  .sum-line span{color:var(--muted)}
+  .sum-line b{font-variant-numeric:tabular-nums}
+  .sum-total{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 4px;border-top:1px solid var(--line);margin-top:6px}
+  .sum-total span{font-size:11.5px;font-weight:750;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .sum-total b{font-size:22px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .sum-note{font-size:11px;color:var(--muted);margin:10px 0 12px;line-height:1.5}
+
+  .mini{width:82px;padding:5px 7px;min-height:30px;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+  .manual-add{display:grid;grid-template-columns:1.2fr .9fr 1fr 84px auto;gap:8px;padding:12px 16px;border-top:1px dashed var(--line);align-items:end;background:var(--surface-2)}
+  .manual-add .field label{font-size:10.5px}
+  .manual-add .input{min-height:33px;padding:5px 8px;font-size:12.5px}
+
+  .notice{display:flex;gap:10px;padding:11px 13px;border-radius:10px;font-size:12.5px;line-height:1.5;background:var(--brand-soft);color:var(--ink-2);border:1px solid color-mix(in srgb,var(--brand-2) 18%,transparent)}
+  .notice .ic{color:var(--brand-2);margin-top:1px}
+
+  /* ---------- approvals ---------- */
+  .tabs{display:inline-flex;padding:3px;gap:2px;background:var(--surface-3);border-radius:10px;border:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .tab{border:0;background:none;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:650;color:var(--muted);cursor:pointer}
+  .tab.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:13px}
+  .req-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:9px}
+  .req-card header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .req-card h3{font-size:13.5px;margin:0;font-weight:750}
+  .req-card .when{font-size:12px;color:var(--muted)}
+  .mini-stats{display:flex;gap:14px;font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:9px}
+  .mini-stats b{display:block;color:var(--ink);font-size:13.5px;font-variant-numeric:tabular-nums;font-weight:750}
+  .appr-line{display:flex;gap:8px;flex-wrap:wrap}
+  .req-card footer{margin-top:auto;display:flex;gap:7px;align-items:center;padding-top:4px}
+  .req-card footer .btn{margin-left:auto}
+
+  /* ---------- drawer ---------- */
+  .drawer-wrap{position:fixed;inset:0;z-index:60;background:rgba(6,14,24,.55);display:flex;justify-content:flex-end;opacity:0;pointer-events:none;transition:opacity .18s ease}
+  .drawer-wrap.open{opacity:1;pointer-events:auto}
+  .drawer{width:min(760px,100%);height:100%;background:var(--surface);display:flex;flex-direction:column;transform:translateX(28px);transition:transform .22s ease;box-shadow:-24px 0 60px rgba(0,0,0,.28)}
+  .drawer-wrap.open .drawer{transform:none}
+  .drawer-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:18px 22px;border-bottom:1px solid var(--line);background:var(--surface)}
+  .drawer-head h2{font-size:17px;margin:2px 0 2px;letter-spacing:-.02em}
+  .drawer-id{font-size:11.5px;color:var(--brand-2);font-weight:750;letter-spacing:.04em}
+  .drawer-head-right{display:flex;align-items:center;gap:8px}
+  .drawer-body{overflow:auto;padding:18px 22px 26px;display:flex;flex-direction:column;gap:16px}
+  .drawer-foot{display:flex;gap:8px;align-items:center;padding:12px 22px;border-top:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
+  .drawer-foot .grow{flex:1}
+  .drawer-sec h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:750}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+  .meta-grid > div{min-width:0}
+  .meta-grid dt{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  .meta-grid dd{margin:2px 0 0;font-size:13px;font-weight:600;color:var(--ink-2);overflow-wrap:anywhere}
+  .reason{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;color:var(--ink-2)}
+  .total-row{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;font-size:12.5px}
+  .total-row b{font-size:14px;font-variant-numeric:tabular-nums}
+
+  .appr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .appr-card{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--surface)}
+  .appr-card.approved{border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:color-mix(in srgb,var(--ok-soft) 55%,var(--surface))}
+  .appr-card.rejected{border-color:color-mix(in srgb,var(--bad) 35%,transparent);background:color-mix(in srgb,var(--bad-soft) 55%,var(--surface))}
+  .appr-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}
+  .appr-title{font-size:12px;font-weight:750}
+  .appr-note{margin:7px 0 0;font-size:12px;color:var(--ink-2);line-height:1.45;font-style:italic}
+  .timeline{list-style:none;margin:0;padding:0 0 0 4px}
+  .timeline li{position:relative;padding:0 0 14px 22px;font-size:12.5px}
+  .timeline li:last-child{padding-bottom:0}
+  .timeline li::before{content:"";position:absolute;left:4px;top:5px;bottom:-2px;width:1px;background:var(--line)}
+  .timeline li:last-child::before{display:none}
+  .tl-dot{position:absolute;left:0;top:4px;width:9px;height:9px;border-radius:99px;background:var(--muted);border:2px solid var(--surface)}
+  .tl-dot.approved{background:var(--ok)} .tl-dot.rejected{background:var(--bad)} .tl-dot.submitted{background:var(--brand-2)}
+  .hist-note{margin-top:4px;color:var(--ink-2);background:var(--surface-2);border-radius:7px;padding:6px 9px;font-size:12px;line-height:1.45}
+
+  /* ---------- modal ---------- */
+  .modal-wrap{position:fixed;inset:0;z-index:80;background:rgba(6,14,24,.58);display:grid;place-items:center;padding:18px;overflow:auto}
+  .modal{width:min(520px,100%);background:var(--surface);border-radius:14px;border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;max-height:90vh;overflow:hidden}
+  .modal.wide{width:min(680px,100%)}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .modal-head h2{font-size:15.5px;margin:0;letter-spacing:-.01em}
+  .modal-head p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+  .modal-body{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+  .modal-msg{font-size:13px;color:var(--ink-2);line-height:1.55}
+  .pick-search{display:flex;gap:8px;margin-bottom:10px}
+  .pick-search .input{flex:1}
+  .pick-search select{width:150px}
+  .pick-list{display:flex;flex-direction:column;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .pick-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px}
+  .pick-row:last-child{border-bottom:0}
+  .pick-row:hover{background:var(--surface-2)}
+  .pick-row input{width:16px;height:16px;accent-color:var(--brand-2);flex:0 0 auto}
+  .pick-main{display:flex;flex-direction:column;min-width:0;flex:1}
+  .pick-main b{font-weight:700}
+  .pick-row .rate{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+  .pick-count{font-size:12px;color:var(--muted)}
+
+  /* ---------- toast ---------- */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);z-index:100;pointer-events:none;opacity:0;transition:opacity .18s,transform .18s;max-width:calc(100% - 32px)}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast-in{display:flex;align-items:center;gap:9px;background:#0e1f30;color:#eaf2fb;font-size:12.8px;font-weight:600;padding:10px 15px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.12)}
+  .toast-in.ok{border-color:color-mix(in srgb,var(--ok) 60%,transparent)}
+  .toast-in.bad{border-color:color-mix(in srgb,var(--bad) 60%,transparent)}
+  .toast-in .ic{color:#8fc3ff}
+
+  /* ---------- settings ---------- */
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .profile{display:flex;gap:12px;align-items:center}
+  .profile .avatar{width:46px;height:46px;border-radius:11px;font-size:15px}
+  .profile h3{margin:0;font-size:15px}
+  .role-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .role-card{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--surface-2);cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+  .role-card:hover{border-color:var(--brand-2)}
+  .role-card.active{border-color:var(--brand-2);background:var(--brand-soft)}
+  .role-card b{display:block;font-size:12px}
+  .role-card span{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+  .data-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+  .data-row:last-child{border-bottom:0}
+  .data-row b{font-variant-numeric:tabular-nums}
+  .access-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .access-list li{display:flex;gap:8px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+  .access-list .ic{width:15px;height:15px;color:var(--ok);flex:0 0 auto;margin-top:1px}
+  .flow-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .flow-list li{display:flex;gap:10px;font-size:12.5px}
+  .flow-list b{display:block;font-weight:750;font-size:12.5px}
+  .flow-list span{color:var(--muted);font-size:11.5px;line-height:1.45}
+  .flow-n{width:22px;height:22px;border-radius:99px;background:var(--brand-soft);color:var(--brand-2);display:grid;place-items:center;font-size:11px;font-weight:800;flex:0 0 auto}
+
+  /* ---------- registry ---------- */
+  .reg-grid{display:grid;grid-template-columns:390px 1fr;gap:14px;align-items:start}
+  .reg-grid .card{min-width:0}
+  .reg-table{max-height:540px;overflow:auto}
+  .reg-table .tbl th{position:sticky;top:0;z-index:1}
+  .reg-note{font-size:11px;color:var(--muted);line-height:1.5;margin:0}
+  .reg-head{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  .reg-head:first-child{margin-top:0}
+  .bulk-cols{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;line-height:1.7;color:var(--ink-2);overflow-wrap:anywhere}
+  .file-input{padding:6px 8px;font-size:12px}
+  .adj-note{display:flex;align-items:flex-start;gap:5px;font-size:10.5px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:4px 6px;margin-top:6px;line-height:1.4}
+  .adj-note .ic{width:12px;height:12px;margin-top:1px}
+  .dec-hours{border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:240px}
+  .dec-hours .tbl{font-size:12px}
+  .dec-hours .tbl td,.dec-hours .tbl th{padding:7px 9px}
+  .dec-mini{width:72px;padding:4px 6px;min-height:30px;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+  .dec-total{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;font-size:12px}
+  .dec-total b{font-variant-numeric:tabular-nums}
+  @media (max-width:1080px){.reg-grid{grid-template-columns:1fr}}
+
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:38px 18px;color:var(--muted);text-align:center;font-size:12.5px}
+  .empty .ic{width:30px;height:30px;opacity:.45}
+  .empty b{color:var(--ink-2);font-size:13.5px}
+
+  /* ---------- sign in ---------- */
+  [hidden]{display:none!important}
+  #authHost{
+    position:fixed;inset:0;z-index:120;overflow:auto;padding:22px;display:grid;place-items:center;
+    background:
+      radial-gradient(1100px 560px at 12% 8%,color-mix(in srgb,var(--brand-2) 13%,transparent),transparent 60%),
+      radial-gradient(900px 500px at 92% 92%,color-mix(in srgb,var(--accent) 11%,transparent),transparent 55%),
+      var(--bg);
+  }
+  .auth-shell{width:min(1000px,100%);display:grid;grid-template-columns:1.02fr .98fr;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 30px 70px rgba(10,25,45,.22);margin:24px 0}
+  .auth-brand{background:linear-gradient(160deg,#0f2a44,#0a1b2d 65%,#081625);color:#dbe7f3;padding:34px 32px;display:flex;flex-direction:column;gap:18px}
+  .auth-brand .brand{padding:0}
+  .auth-brand h2{font-size:25px;line-height:1.22;margin:16px 0 0;letter-spacing:-.02em;color:#fff;font-weight:800}
+  .auth-brand p.lead{margin:0;color:#a9c0d6;font-size:13px;line-height:1.6}
+  .auth-points{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .auth-points li{display:flex;gap:10px;font-size:12.5px;color:#bcd0e2;line-height:1.5}
+  .auth-points .ic{width:17px;height:17px;color:#7fb3e0;margin-top:1px}
+  .auth-points b{color:#fff;font-weight:700}
+  .auth-foot{margin-top:auto;font-size:10.5px;color:#6f8ba4;border-top:1px solid rgba(255,255,255,.1);padding-top:14px;line-height:1.6}
+  .auth-form{padding:32px;display:flex;flex-direction:column;gap:13px;min-width:0}
+  .auth-form h1{font-size:20px;margin:0;letter-spacing:-.02em}
+  .auth-form .sub{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+  .auth-form form{display:flex;flex-direction:column;gap:12px;margin-top:2px}
+  .pass-wrap{position:relative;display:flex}
+  .pass-wrap .input{padding-right:56px}
+  .pass-toggle{position:absolute;right:3px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--brand-2);font-size:11px;font-weight:750;padding:6px 8px;cursor:pointer;border-radius:6px}
+  .pass-toggle:hover{background:var(--surface-2)}
+  .auth-demo{border-top:1px solid var(--line);padding-top:12px;margin-top:1px}
+  .auth-demo .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px}
+  .auth-demo .hdr b{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .auth-demo .hdr span{font-size:10.5px;color:var(--muted)}
+  .demo-list{border:1px solid var(--line);border-radius:10px;max-height:236px;overflow:auto}
+  .demo-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:7px 10px;cursor:pointer;font-size:12px;color:var(--ink)}
+  .demo-row:first-child{border-top:0}
+  .demo-row:hover,.demo-row:focus-visible{background:var(--surface-2)}
+  .demo-who{display:flex;flex-direction:column;min-width:0;line-height:1.3;flex:1}
+  .demo-who b{font-weight:700;font-size:11.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .demo-who span{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .demo-user{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .demo-role{font-size:9.5px;font-weight:750;padding:2px 6px;border-radius:99px;background:var(--brand-soft);color:var(--brand-2);white-space:nowrap}
+  .auth-note{font-size:10.5px;color:var(--muted);line-height:1.5;margin:0}
+  @media(max-width:820px){
+    #authHost{padding:10px;align-items:start}
+    .auth-shell{grid-template-columns:1fr;margin:8px 0;border-radius:14px}
+    .auth-brand{padding:20px;gap:10px}
+    .auth-brand h2{font-size:20px;margin-top:2px}
+    .auth-brand p.lead{font-size:12px}
+    .auth-points{display:none}
+    .auth-foot{display:none}
+    .auth-form{padding:19px}
+  }
+
+  /* ---------- mobile ---------- */
+  .tabbar{display:none}
+  @media (max-width:1120px){
+    .dash-grid{grid-template-columns:1fr}
+    .form-layout{grid-template-columns:1fr 280px}
+    .demo-pill{display:none}
+  }
+  @media (max-width:980px){
+    .rail{display:none}
+    .topbar{padding:11px 16px}
+    .topbar h1{font-size:17px}
+    .user-meta{display:none}
+    main{padding:16px 16px 96px;max-width:none}
+    .form-layout{grid-template-columns:1fr}
+    .summary{position:static}
+    .settings-grid{grid-template-columns:1fr}
+    .grid-3{grid-template-columns:1fr 1fr}
+    .manual-add{grid-template-columns:1fr 1fr}
+    .manual-add .btn{grid-column:span 2}
+    .tabbar{
+      display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);
+      border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;
+      box-shadow:0 -8px 24px rgba(16,32,52,.08);
+    }
+    .tab{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:var(--muted);font-size:10px;font-weight:650;padding:5px 8px;border-radius:8px;cursor:pointer;min-width:52px;position:relative}
+    .tab .ic{width:20px;height:20px}
+    .tab.active{color:var(--brand-2)}
+    .tab-badge{position:absolute;top:1px;right:2px;background:var(--accent);color:#231a00;font-size:9px;font-weight:800;border-radius:99px;padding:0 5px;line-height:14px}
+    .hide-sm{display:none}
+    .hide-md{display:none}
+    .tbl th,.tbl td{padding:8px 9px}
+    .page-head{margin-bottom:12px}
+    .topbar-right .role-switch{max-width:112px}
+  }
+  @media (max-width:640px){
+    .grid-2{grid-template-columns:1fr}
+    .span-2{grid-column:span 1}
+    .meta-grid{grid-template-columns:1fr 1fr}
+    .appr-grid{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr;gap:10px}
+    .kpi .val{font-size:22px}
+    .toolbar .field{max-width:none;flex:1 1 44%}
+    .manual-add{grid-template-columns:1fr}
+    .manual-add .btn{grid-column:span 1}
+    .role-cards{grid-template-columns:1fr}
+    .grid-3{grid-template-columns:1fr}
+    .drawer-body{padding:14px 16px 22px}
+    .drawer-head{padding:14px 16px}
+    .drawer-foot{padding:10px 16px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div id="authHost" hidden></div>
+<div class="app" id="appShell">
+  <aside class="rail" id="rail" aria-label="Primary"></aside>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="crumb" id="pageSub">Overtime operations overview</div>
+      </div>
+      <div class="topbar-right">
+        <span class="demo-pill">Demo</span>
+        <button class="icon-btn" id="themeBtn" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <div class="user-chip">
+          <div class="avatar" id="avatar" aria-hidden="true">RI</div>
+          <div class="user-meta"><b id="userName">Md. Rafiqul Islam</b><span id="userTitle">Shift Supervisor</span></div>
+        </div>
+        <button class="icon-btn" id="signOutBtn" data-signout aria-label="Sign out" title="Sign out"></button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Primary mobile"></nav>
+<div id="drawerHost"></div>
+<div id="modalHost"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================ icons ============================ */
+const ICONS={
+  dashboard:'<rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.6" cy="6" r="1"/><circle cx="3.6" cy="12" r="1"/><circle cx="3.6" cy="18" r="1"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>',
+  checkCircle:'<circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.6 2.6 4.6-5.2"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  sliders:'<path d="M4 6h9M18 6h2M4 12h3M12 12h8M4 18h11M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="9.5" cy="12" r="2"/><circle cx="17.5" cy="18" r="2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.4-3.2 2.6-5 5.5-5s5.1 1.8 5.5 5"/><path d="M16 5.5a3 3 0 010 5.5M17.5 15.2c2 .6 3.2 2.2 3.5 4.8"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  download:'<path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M4 20h16"/>',
+  print:'<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="7" rx="2"/><path d="M7 14h10v6H7z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
+  moon:'<path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/>',
+  chevron:'<path d="M9 6l6 6-6 6"/>',
+  alert:'<path d="M12 3l9.5 17h-19L12 3z"/><path d="M12 9v5M12 17.4v.6"/>',
+  trash:'<path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13"/>',
+  building:'<path d="M4 21V6l8-3 8 3v15"/><path d="M9 21v-5h6v5M9 9h.01M15 9h.01M9 12.5h.01M15 12.5h.01"/>',
+  shield:'<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/>',
+  calendar:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>',
+  swap:'<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  arrowLeft:'<path d="M15 6l-6 6 6 6"/>',
+  filter:'<path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/>',
+  bolt:'<path d="M13 2L5 14h6l-1 8 8-12h-6l1-8z"/>',
+  logout:'<path d="M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4"/><path d="M10 8l-4 4 4 4M6 12h9"/>'
+};
+function icon(name,cls){return '<svg class="ic '+(cls||'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICONS[name]||'')+'</svg>';}
+
+/* ============================ constants ============================ */
+const KEY='otp.v1', THEME_KEY='otp.theme', SESSION_KEY='otp.session';
+const USERS={
+  superadmin:{key:'superadmin',id:'SA-1001',username:'admin',name:'Central Admin',role:'superadmin',roleLabel:'Super admin',title:'Super Admin · Central Team',dept:'Central',initials:'CA'},
+  rafiq:{key:'rafiq',id:'U-1042',username:'rafiq',name:'Md. Rafiqul Islam',role:'requester',roleLabel:'Requester',title:'Shift Supervisor · Packing',dept:'Production',initials:'RI'},
+  shafiq:{key:'shafiq',id:'U-1055',username:'shafiq',name:'Shafiq Islam',role:'requester',roleLabel:'Requester',title:'Shift Supervisor · Warehouse',dept:'Logistics',initials:'SI'},
+  nazmul:{key:'nazmul',id:'U-1071',username:'nazmul',name:'Md. Nazmul Hasan',role:'requester',roleLabel:'Requester',title:'Shift Supervisor · Mechanical',dept:'Maintenance',initials:'NH'},
+  karim:{key:'karim',id:'H-1101',username:'karim',name:'Md. Karim Uddin',role:'head',roleLabel:'Dept head',title:'Head of Production',dept:'Production',initials:'KU'},
+  nusrat:{key:'nusrat',id:'H-1102',username:'nusrat',name:'Nusrat Jahan',role:'head',roleLabel:'Dept head',title:'Head of Logistics',dept:'Logistics',initials:'NJ'},
+  habib:{key:'habib',id:'H-1103',username:'habib',name:'Engr. Habibur Rahman',role:'head',roleLabel:'Dept head',title:'Head of Maintenance',dept:'Maintenance',initials:'HB'},
+  ayesha:{key:'ayesha',id:'H-1104',username:'ayesha',name:'Dr. Ayesha Siddika',role:'head',roleLabel:'Dept head',title:'Head of Quality',dept:'Quality',initials:'AS'},
+  opex:{key:'opex',id:'U-2011',username:'farhana',name:'Farhana Akter',role:'opex',roleLabel:'OPEX',title:'OPEX Analyst · Operations Excellence',dept:'OPEX',initials:'FA'},
+  hr:{key:'hr',id:'U-3007',username:'sanjeed',name:'Sanjeed Rahman',role:'hr',roleLabel:'HR',title:'HR Officer · Human Capital',dept:'Human Capital',initials:'SR'}
+};
+const HEAD_BY_DEPT={Production:'karim',Logistics:'nusrat',Maintenance:'habib',Quality:'ayesha'};
+const ROLE_LABEL={head:'Dept head',opex:'OPEX',hr:'HR',superadmin:'Super admin'};
+const DEPTS=['Production','Logistics','Maintenance','Quality'];
+const DEPT_LINES={
+  Production:['Line 1','Line 2','Line 3','Packing'],
+  Logistics:['Warehouse','Dispatch','Stores'],
+  Maintenance:['Mechanical','Electrical','Utilities'],
+  Quality:['Lab','In-process','Final']
+};
+const DEPT_CC={
+  Production:'CC-1000 Production',
+  Logistics:'CC-2000 Logistics',
+  Maintenance:'CC-3000 Maintenance',
+  Quality:'CC-4000 Quality'
+};
+const SHIFTS=['A (06:00-14:00)','B (14:00-22:00)','C (22:00-06:00)','General (08:00-17:00)'];
+const OT_TYPES={'Weekday':1.5,'Weekend':2,'Holiday':2};
+const PRIORITIES=['Normal','Urgent'];
+const ROSTER=[
+  {empId:'AKJ-10231',name:'Abdul Karim',designation:'Operator',dept:'Production',line:'Line 3',rate:95},
+  {empId:'AKJ-10244',name:'Jasim Uddin',designation:'Helper',dept:'Production',line:'Packing',rate:78},
+  {empId:'AKJ-10258',name:'Ruma Begum',designation:'Packing Operator',dept:'Production',line:'Packing',rate:82},
+  {empId:'AKJ-10266',name:'Sohel Rana',designation:'Fitter',dept:'Production',line:'Line 2',rate:105},
+  {empId:'AKJ-10279',name:'Momena Khatun',designation:'Helper',dept:'Production',line:'Line 1',rate:78},
+  {empId:'AKJ-10288',name:'Kamal Hossain',designation:'Operator',dept:'Production',line:'Line 2',rate:95},
+  {empId:'AKJ-10293',name:'Shirin Akter',designation:'QC Checker',dept:'Production',line:'Packing',rate:88},
+  {empId:'AKJ-10304',name:'Babul Mia',designation:'Forklift Operator',dept:'Logistics',line:'Warehouse',rate:100},
+  {empId:'AKJ-10312',name:'Nazma Sultana',designation:'Store Keeper',dept:'Logistics',line:'Stores',rate:92},
+  {empId:'AKJ-10321',name:'Ripon Hossain',designation:'Loader',dept:'Logistics',line:'Dispatch',rate:76},
+  {empId:'AKJ-10335',name:'Shafiq Islam',designation:'Logistics Supervisor',dept:'Logistics',line:'Dispatch',rate:130},
+  {empId:'AKJ-10347',name:'Md. Nazmul Hasan',designation:'Sr. Technician',dept:'Maintenance',line:'Mechanical',rate:140},
+  {empId:'AKJ-10355',name:'Anwar Hossain',designation:'Electrician',dept:'Maintenance',line:'Electrical',rate:120},
+  {empId:'AKJ-10362',name:'Tanvir Ahmed',designation:'Mechanic',dept:'Maintenance',line:'Utilities',rate:115},
+  {empId:'AKJ-10370',name:'Farzana Yeasmin',designation:'Lab Analyst',dept:'Quality',line:'Lab',rate:110},
+  {empId:'AKJ-10381',name:'Imran Kabir',designation:'Inspector',dept:'Quality',line:'Final',rate:98}
+];
+const PS=10;
+const ROLE_OPTIONS=['requester','head','opex','hr','superadmin'];
+function roleLabelOf(role){return role==='head'?'Dept head':role==='opex'?'OPEX':role==='hr'?'HR':role==='superadmin'?'Super admin':'Requester';}
+function seedUsers(){
+  return Object.keys(USERS).map(function(k){
+    return Object.assign({},USERS[k],{password:'1234',demo:true});
+  });
+}
+function seedDepartments(){
+  return DEPTS.map(function(d){return {name:d,costCenter:DEPT_CC[d],lines:DEPT_LINES[d].slice()};});
+}
+function seedRoster(){return ROSTER.map(function(e){return Object.assign({},e);});}
+function initialsOf(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(function(p){return /[A-Za-z]/.test(p[0]||'');});
+  if(!parts.length)return 'NA';
+  if(parts.length===1)return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+}
+
+/* ============================ utils ============================ */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'৳'+Math.round(Number(n)||0).toLocaleString('en-US');
+const hrs=n=>(Math.round((Number(n)||0)*10)/10).toFixed(1);
+function isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDate(iso){if(!iso)return '—';const p=String(iso).slice(0,10).split('-').map(Number);const d=new Date(p[0],p[1]-1,p[2]);return isNaN(d)?iso:d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtStamp(iso){if(!iso)return '—';const d=new Date(iso);if(isNaN(d))return iso;return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+function ago(iso){const s=(Date.now()-new Date(iso).getTime())/1000;if(!isFinite(s)||s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';if(s<604800)return Math.floor(s/86400)+'d ago';return fmtDate(String(iso).slice(0,10));}
+function age(iso){const h=(Date.now()-new Date(iso).getTime())/3600000;if(h<1)return '<1h';if(h<24)return Math.floor(h)+'h';return Math.floor(h/24)+'d';}
+function windowHours(start,end,brk){
+  if(!start||!end)return 0;
+  const a=start.split(':').map(Number),b=end.split(':').map(Number);
+  if(a.length<2||b.length<2||isNaN(a[0])||isNaN(b[0]))return 0;
+  let mins=(b[0]*60+b[1])-(a[0]*60+a[1]);
+  if(mins<=0)mins+=1440;
+  mins-=Math.max(0,Number(brk)||0);
+  return Math.max(0,Math.round(mins/6)/10);
+}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+
+/* ============================ state ============================ */
+let state=null;
+function normalize(d){
+  if(!d||!Array.isArray(d.requests))return null;
+  d.requests.forEach(migrateRequest);
+  if(!Array.isArray(d.users)||!d.users.length)d.users=seedUsers();
+  if(!d.users.some(function(u){return u.role==='superadmin';})){
+    d.users.unshift(Object.assign({},USERS.superadmin,{password:'1234',demo:true}));
+  }
+  d.users.forEach(function(u){
+    if(!u.password)u.password='1234';
+    if(u.demo===undefined)u.demo=true;
+    if(!u.roleLabel)u.roleLabel=roleLabelOf(u.role);
+    if(!u.initials)u.initials=initialsOf(u.name);
+    if(!u.key)u.key=u.id;
+  });
+  if(!Array.isArray(d.departments)||!d.departments.length)d.departments=seedDepartments();
+  d.departments.forEach(function(dep){
+    if(!Array.isArray(dep.lines)||!dep.lines.length)dep.lines=['General'];
+    if(!dep.costCenter)dep.costCenter='CC-'+dep.name.toUpperCase().slice(0,4);
+  });
+  if(!Array.isArray(d.roster))d.roster=seedRoster();
+  if(!d.settings||typeof d.settings!=='object')d.settings={};
+  return d;
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);if(!raw)return null;
+    return normalize(JSON.parse(raw));
+  }catch(e){return null;}
+}
+function migrateRequest(r){
+  r.approvals=r.approvals||{};
+  ['opex','hr'].forEach(function(k){if(!r.approvals[k])r.approvals[k]={state:'pending',by:null,at:null,comment:''};});
+  if(!r.approvals.head){
+    const acted=(r.approvals.opex.state!=='pending')||(r.approvals.hr.state!=='pending');
+    r.approvals.head=acted
+      ? {state:'approved',by:'System migration',at:r.createdAt,comment:'Legacy request — department head approval assumed.'}
+      : {state:'pending',by:null,at:null,comment:''};
+  }
+  r.history=r.history||[];
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast('Could not save locally — storage may be full','bad');}
+  sheetDirty=true;
+  if(sheetCfg.url){sheetCfg.dirty=true;sheetSaveCfg();}
+  sheetSchedule();
+}
+
+/* ============================ google sheet sync ============================ */
+const SHEET_KEY='otp.sheet';
+let sheetCfg={url:'',rev:0,lastSync:''};
+let sheetTimer=null,sheetDirty=false,sheetBusy=false,sheetError='';
+function sheetLoadCfg(){try{const raw=localStorage.getItem(SHEET_KEY);if(raw)Object.assign(sheetCfg,JSON.parse(raw));}catch(e){}}
+function sheetSaveCfg(){try{localStorage.setItem(SHEET_KEY,JSON.stringify(sheetCfg));}catch(e){}}
+function sheetHasUnsynced(){return sheetDirty||!!sheetCfg.dirty;}
+function sheetReady(){return /^https:\/\/script\.google\.com\/macros\//.test(String(sheetCfg.url||'').trim());}
+function sheetUrl(){return String(sheetCfg.url||'').trim();}
+function sheetPayload(){
+  return {action:'save',rev:(Number(sheetCfg.rev)||0)+1,data:{
+    requests:state.requests,users:state.users,departments:state.departments,
+    roster:state.roster,seq:Number(state.seq)||0,settings:state.settings||{}
+  }};
+}
+function sheetSchedule(){if(!sheetReady()||sheetBusy)return;clearTimeout(sheetTimer);sheetTimer=setTimeout(function(){sheetPush(false);},1500);}
+function sheetStatusText(){
+  if(!sheetReady())return 'Not connected';
+  if(sheetBusy)return 'Syncing…';
+  if(sheetError)return 'Error';
+  if(sheetHasUnsynced())return 'Unsynced changes';
+  return 'Connected';
+}
+function renderSheetStatus(){
+  const st=$('#sheetStatus');if(!st)return;
+  st.textContent=sheetStatusText();
+  st.style.color=sheetError?'var(--bad)':(!sheetReady()?'var(--muted)':(sheetHasUnsynced()||sheetBusy)?'var(--warn)':'var(--ok)');
+  const ls=$('#sheetLastSync');if(ls)ls.textContent=sheetCfg.lastSync?fmtStamp(sheetCfg.lastSync):'—';
+  const rv=$('#sheetRev');if(rv)rv.textContent=String(Number(sheetCfg.rev)||0);
+  const er=$('#sheetErr');
+  if(er)er.innerHTML=sheetError?'<div class="alert bad" role="alert">'+icon('alert')+'<div>'+esc(sheetError)+'</div></div>':'';
+  const btn=document.querySelector('[data-sheet-sync]');
+  if(btn)btn.disabled=sheetBusy;
+}
+function sheetPush(manual){
+  if(!sheetReady()||sheetBusy)return Promise.resolve(false);
+  sheetBusy=true;sheetError='';renderSheetStatus();
+  return fetch(sheetUrl(),{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(sheetPayload())
+  }).then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(!j||!j.ok)throw new Error((j&&j.error)||'The sheet rejected the write.');
+    sheetCfg.rev=Number(j.rev)||sheetCfg.rev;
+    sheetCfg.lastSync=new Date().toISOString();
+    sheetDirty=false;sheetCfg.dirty=false;sheetError='';
+    sheetSaveCfg();
+    if(manual)toast('Pushed to Google Sheet (revision '+sheetCfg.rev+')','ok');
+    return true;
+  }).catch(function(err){
+    sheetError='Push failed: '+(err&&err.message?err.message:err);
+    if(manual)toast(sheetError,'bad');
+    return false;
+  }).then(function(v){
+    sheetBusy=false;renderSheetStatus();
+    return v;
+  });
+}
+function sheetApplyRemote(data){
+  const next=normalize(JSON.parse(JSON.stringify(data)));
+  if(!next)return false;
+  state=next;sheetDirty=false;sheetCfg.dirty=false;
+  try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}
+  sheetSaveCfg();
+  renderAll();
+  return true;
+}
+function sheetPull(manual){
+  if(!sheetReady()||sheetBusy)return Promise.resolve(null);
+  sheetBusy=true;sheetError='';renderSheetStatus();
+  return fetch(sheetUrl()+(sheetUrl().indexOf('?')<0?'?':'&')+'action=load&t='+Date.now(),{cache:'no-store'})
+  .then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(j){
+    if(!j||!j.ok)throw new Error((j&&j.error)||'The sheet returned no data.');
+    const remoteRev=Number(j.rev)||0;
+    const hasData=j.data&&Array.isArray(j.data.requests)&&j.data.requests.length;
+    sheetCfg.lastSync=new Date().toISOString();
+    if(hasData&&remoteRev>Number(sheetCfg.rev||0)&&!sheetHasUnsynced()){
+      sheetCfg.rev=remoteRev;
+      sheetApplyRemote(j.data);
+      sheetSaveCfg();
+      if(manual)toast('Pulled data from Google Sheet (revision '+remoteRev+')','ok');
+    }else{
+      sheetCfg.rev=Math.max(Number(sheetCfg.rev)||0,remoteRev);
+      sheetSaveCfg();
+      if(manual)toast(hasData?'Local copy is newer — pushing instead':'Sheet is empty — pushing local data','ok');
+      sheetBusy=false;renderSheetStatus();
+      return sheetPush(manual);
+    }
+    sheetError='';
+    return true;
+  }).catch(function(err){
+    sheetError='Pull failed: '+(err&&err.message?err.message:err);
+    if(manual)toast(sheetError,'bad');
+    return null;
+  }).then(function(v){
+    sheetBusy=false;renderSheetStatus();
+    return v;
+  });
+}
+function sheetSyncNow(){
+  if(!sheetReady()){toast('Paste your Apps Script Web App URL first','bad');return;}
+  if(sheetHasUnsynced())sheetPush(true);else sheetPull(true);
+}
+function sheetConnect(){
+  const inp=$('#sheetUrl');
+  const url=inp?inp.value.trim():'';
+  if(!/^https:\/\/script\.google\.com\/macros\//.test(url)){
+    toast('Enter the Apps Script Web App URL (ends with /exec)','bad');return;
+  }
+  sheetCfg.url=url;sheetCfg.rev=0;sheetError='';
+  sheetDirty=false;sheetCfg.dirty=false;
+  sheetSaveCfg();renderSheetStatus();
+  toast('Connected — checking the sheet…','ok');
+  sheetPull(false);
+}
+function sheetDisconnect(){
+  sheetCfg={url:'',rev:0,lastSync:''};sheetDirty=false;sheetError='';
+  clearTimeout(sheetTimer);sheetSaveCfg();renderSheetStatus();
+  toast('Google Sheet disconnected — data stays in this browser','ok');
+}
+
+function seed(){
+  const now=new Date();
+  const day=n=>{const x=new Date(now);x.setDate(x.getDate()+n);return isoDate(x);};
+  const ts=(n,h,mi)=>{const x=new Date(now);x.setDate(x.getDate()+n);x.setHours(h,mi==null?15:mi,0,0);return x.toISOString();};
+  const emp=(id,h)=>{const p=ROSTER.find(x=>x.empId===id);return {empId:p.empId,name:p.name,designation:p.designation,hours:h,rate:p.rate};};
+  const rafiq={id:USERS.rafiq.id,name:USERS.rafiq.name,title:USERS.rafiq.title,dept:USERS.rafiq.dept};
+  const shafiq={id:USERS.shafiq.id,name:USERS.shafiq.name,title:USERS.shafiq.title,dept:USERS.shafiq.dept};
+  const nazmul={id:USERS.nazmul.id,name:USERS.nazmul.name,title:USERS.nazmul.title,dept:USERS.nazmul.dept};
+  const requests=[];
+  let seq=0;
+  function add(o){
+    seq++;
+    const id='OT-'+o.createdAt.slice(2,4)+o.createdAt.slice(5,7)+'-'+String(seq).padStart(3,'0');
+    const approvals={
+      head:{state:'pending',by:null,at:null,comment:''},
+      opex:{state:'pending',by:null,at:null,comment:''},
+      hr:{state:'pending',by:null,at:null,comment:''}
+    };
+    const history=[{at:o.createdAt,by:o.requester.name,role:'Requester',action:'submitted',note:''}];
+    ['head','opex','hr'].forEach(function(k){
+      const dec=o.decided&&o.decided[k];
+      if(!dec)return;
+      const actor=k==='head'?USERS[HEAD_BY_DEPT[o.dept]]:USERS[k];
+      approvals[k]={state:dec.state,by:actor.name,at:dec.at,comment:dec.note||''};
+      history.push({at:dec.at,by:actor.name,role:ROLE_LABEL[k],action:dec.state,note:dec.note||''});
+    });
+    requests.push({
+      id:id,createdAt:o.createdAt,requester:o.requester,dept:o.dept,line:o.line,shift:o.shift,
+      costCenter:o.cc,otDate:o.otDate,start:o.start,end:o.end,breakMin:o.brk,otType:o.type,
+      multiplier:o.mult,priority:o.priority,reason:o.reason,employees:o.employees,approvals:approvals,history:history,
+      requestedHours:o.employees.reduce(function(s,e){return s+(Number(e.hours)||0);},0),
+      requestedCost:o.employees.reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0)*(Number(o.mult)||1.5);},0)
+    });
+  }
+
+  add({createdAt:ts(0,9,15),requester:rafiq,dept:'Production',line:'Packing',shift:'B (14:00-22:00)',cc:'CC-1000 Production',otDate:day(0),start:'18:00',end:'22:00',brk:0,type:'Weekday',mult:1.5,priority:'Normal',
+    reason:'Urgent export shipment for Apex Footwear. The packing line must clear 12,000 pairs before the 22:00 truck cut-off.',
+    employees:[emp('AKJ-10244',4),emp('AKJ-10258',4),emp('AKJ-10266',4),emp('AKJ-10293',4)]});
+
+  add({createdAt:ts(0,8,10),requester:shafiq,dept:'Logistics',line:'Warehouse',shift:'B (14:00-22:00)',cc:'CC-2000 Logistics',otDate:day(1),start:'19:00',end:'23:30',brk:30,type:'Weekend',mult:2,priority:'Urgent',
+    reason:'Container loading delayed by late raw material arrival. Weekend crew needed to complete three containers for the Saturday vessel.',
+    employees:[emp('AKJ-10304',4),emp('AKJ-10321',4),emp('AKJ-10312',4)],
+    decided:{head:{state:'approved',at:ts(0,9,30),note:'Load plan confirmed against the vessel cut-off.'},opex:{state:'approved',at:ts(0,10,5),note:'Within the approved monthly overtime budget for logistics.'}}});
+
+  add({createdAt:ts(-4,14,20),requester:nazmul,dept:'Maintenance',line:'Mechanical',shift:'General (08:00-17:00)',cc:'CC-3000 Maintenance',otDate:day(-3),start:'08:00',end:'16:00',brk:60,type:'Holiday',mult:2,priority:'Normal',
+    reason:'Annual compressor overhaul on the 250 HP unit. Working in the public holiday shutdown window avoids production line downtime.',
+    employees:[emp('AKJ-10347',7),emp('AKJ-10355',7)],
+    decided:{head:{state:'approved',at:ts(-4,15,10),note:'Shutdown window approved and work permit issued.'},opex:{state:'approved',at:ts(-4,16,40),note:'Planned shutdown work with cost pre-approved in the maintenance budget.'},hr:{state:'approved',at:ts(-3,9,10),note:'Verified holiday allowance multiplier at 2.0x and attendance records.'}}});
+
+  add({createdAt:ts(-5,17,5),requester:rafiq,dept:'Production',line:'Line 2',shift:'C (22:00-06:00)',cc:'CC-1000 Production',otDate:day(-4),start:'22:00',end:'06:00',brk:30,type:'Weekday',mult:1.5,priority:'Normal',
+    reason:'Night shift cover for absent operators on Line 2 to maintain continuous kiln feed and protect the daily output target.',
+    employees:[emp('AKJ-10231',7.5),emp('AKJ-10266',7.5),emp('AKJ-10288',7.5),emp('AKJ-10279',7.5),emp('AKJ-10244',7.5)],
+    decided:{head:{state:'approved',at:ts(-5,18,10),note:'Night coverage approved for continuous kiln operation.'},opex:{state:'approved',at:ts(-5,19,30),note:'Operationally justified for the continuous process.'},hr:{state:'rejected',at:ts(-4,8,25),note:'Combined shift exceeds the 12-hour daily limit for three of the listed employees. Resubmit with a split roster.'}}});
+
+  add({createdAt:ts(0,7,40),requester:nazmul,dept:'Maintenance',line:'Electrical',shift:'B (14:00-22:00)',cc:'CC-3000 Maintenance',otDate:day(2),start:'18:00',end:'21:00',brk:0,type:'Weekday',mult:1.5,priority:'Urgent',
+    reason:'Replace a faulty VFD on the packing conveyor before the next production run to avoid an unplanned stoppage.',
+    employees:[emp('AKJ-10355',3),emp('AKJ-10362',3)],
+    decided:{head:{state:'approved',at:ts(0,7,20),note:'Critical drive fault — proceed before the next run.'}}});
+
+  add({createdAt:ts(-9,16,45),requester:shafiq,dept:'Logistics',line:'Dispatch',shift:'A (06:00-14:00)',cc:'CC-2000 Logistics',otDate:day(-8),start:'06:00',end:'10:00',brk:0,type:'Weekend',mult:2,priority:'Normal',
+    reason:'Early morning dispatch of four trucks to Chattogram port to meet the vessel closing time.',
+    employees:[emp('AKJ-10304',4),emp('AKJ-10321',4),emp('AKJ-10335',4)],
+    decided:{head:{state:'approved',at:ts(-9,17,0),note:'Port deadline confirmed with the freight forwarder.'},opex:{state:'approved',at:ts(-9,17,20),note:'Freight penalty avoidance justifies the overtime.'},hr:{state:'approved',at:ts(-8,7,15),note:'Weekend rate verified against the wage sheet.'}}});
+
+  add({createdAt:ts(-1,15,0),requester:rafiq,dept:'Production',line:'Packing',shift:'B (14:00-22:00)',cc:'CC-1000 Production',otDate:day(-1),start:'18:00',end:'22:00',brk:0,type:'Weekday',mult:1.5,priority:'Normal',
+    reason:'Clear a backlog of 6,000 cartons created by a three-hour power interruption on the packing line.',
+    employees:[emp('AKJ-10244',4),emp('AKJ-10258',4),emp('AKJ-10293',4)],
+    decided:{head:{state:'approved',at:ts(-1,16,10),note:'Backlog recovery approved by the production plan.'},hr:{state:'approved',at:ts(0,8,0),note:'Overtime rate and hours verified against attendance records.'}}});
+
+  add({createdAt:ts(-7,10,30),requester:shafiq,dept:'Logistics',line:'Stores',shift:'General (08:00-17:00)',cc:'CC-2000 Logistics',otDate:day(-6),start:'20:00',end:'24:00',brk:0,type:'Weekday',mult:1.5,priority:'Normal',
+    reason:'Cycle count and re-binning of the spare parts store before the monthly inventory freeze.',
+    employees:[emp('AKJ-10312',4),emp('AKJ-10321',4)],
+    decided:{head:{state:'approved',at:ts(-7,11,5),note:'Store cycle count approved for the inventory freeze.'},opex:{state:'rejected',at:ts(-7,12,15),note:'Stores overtime is not budgeted this month. Reschedule the cycle count into the regular shift.'}}});
+
+  add({createdAt:ts(0,6,30),requester:rafiq,dept:'Production',line:'Line 3',shift:'C (22:00-06:00)',cc:'CC-1000 Production',otDate:day(1),start:'22:00',end:'06:00',brk:30,type:'Weekday',mult:1.5,priority:'Urgent',
+    reason:'Two operators absent on Line 3. Night coverage is needed to keep the kiln at full feed until the relief shift arrives.',
+    employees:[emp('AKJ-10231',7.5),emp('AKJ-10288',7.5)]});
+
+  return {requests:requests,seq:seq,users:seedUsers(),departments:seedDepartments(),roster:seedRoster(),settings:{}};
+}
+
+/* ============================ ui state ============================ */
+let ui={
+  role:'guest',
+  userKey:null,
+  view:'dashboard',
+  drawer:null,
+  filters:{q:'',status:'All',dept:'All',from:'',to:''},
+  page:0,
+  atab:'queue',
+  regTab:'users',
+  bulkType:'users',
+  bulkResult:null,
+  reportMonth:'',
+  dashMonth:'',
+  draft:{employees:[]},
+  theme:(document.documentElement.dataset.theme||'light'),
+  pick:{set:null,query:'',dept:'All'}
+};
+let pendingConfirm=null;
+
+const TITLES={dashboard:'Dashboard',new:'New overtime request',requests:'Overtime requests',approvals:'Approvals',registry:'Registration',reports:'Reports',settings:'Settings'};
+const SUBS={
+  dashboard:'Overtime operations overview',
+  new:'Raise a batch overtime request for a team or shift',
+  requests:'Every request and its live approval state',
+  approvals:'Department head, OPEX and HR sign-off queue',
+  registry:'Register sign-in IDs, departments and roster employees',
+  reports:'Approved overtime hours and cost',
+  settings:'Account, data and preferences'
+};
+
+/* ============================ selectors ============================ */
+function allUsers(){return (state&&state.users)||[];}
+function findUser(id){return allUsers().find(function(u){return u.id===id;})||null;}
+function findUserByUsername(name){
+  const n=String(name||'').trim().toLowerCase();
+  return allUsers().find(function(u){return String(u.username||'').toLowerCase()===n;})||null;
+}
+function user(){return ui.userKey?findUser(ui.userKey):null;}
+function departments(){return (state&&state.departments)||[];}
+function deptNames(){return departments().map(function(d){return d.name;});}
+function deptDef(name){return departments().find(function(d){return d.name===name;})||null;}
+function deptLines(name){const d=deptDef(name);return d?d.lines||[]:[];}
+function deptCC(name){const d=deptDef(name);return d?d.costCenter||'':'';}
+function headForDept(name){return allUsers().find(function(u){return u.role==='head'&&u.dept===name;})||null;}
+function rosterList(){return (state&&state.roster)||[];}
+function canRegister(){return ui.role==='head'||ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
+function canManageDepartments(){return ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
+function assignableRoles(){
+  if(ui.role==='superadmin')return ['requester','head','opex','hr','superadmin'];
+  if(ui.role==='opex'||ui.role==='hr')return ['requester','head'];
+  if(ui.role==='head')return ['requester'];
+  return [];
+}
+function canResetData(){return ui.role==='opex'||ui.role==='superadmin';}
+function canExportAll(){return ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
+function visible(){
+  if(!user())return [];
+  if(ui.role==='requester')return state.requests.filter(function(r){return r.requester.id===user().id;});
+  if(ui.role==='head')return state.requests.filter(function(r){return r.dept===user().dept;});
+  return state.requests.slice();
+}
+function overall(r){
+  const a=r.approvals;
+  if(!a)return 'Pending';
+  if((a.head&&a.head.state==='rejected')||(a.opex&&a.opex.state==='rejected')||(a.hr&&a.hr.state==='rejected'))return 'Rejected';
+  if(a.head&&a.head.state==='approved'&&a.opex.state==='approved'&&a.hr.state==='approved')return 'Approved';
+  return 'Pending';
+}
+function approvedCount(r){return ['head','opex','hr'].filter(function(k){return r.approvals[k]&&r.approvals[k].state==='approved';}).length;}
+function reqHours(r){return (r.employees||[]).reduce(function(s,e){return s+(Number(e.hours)||0);},0);}
+function reqCost(r){return (r.employees||[]).reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0)*(Number(r.multiplier)||1.5);},0);}
+function canDecide(r,role){
+  if(!user())return false;
+  if(role!=='head'&&role!=='opex'&&role!=='hr')return false;
+  if(overall(r)!=='Pending')return false;
+  if(role==='head')return r.dept===user().dept&&r.approvals.head.state==='pending';
+  return r.approvals.head.state==='approved'&&r.approvals[role].state==='pending';
+}
+function awaitingFor(role){
+  return visible().filter(function(r){
+    if(overall(r)!=='Pending')return false;
+    if(role==='head')return r.approvals.head.state==='pending';
+    if(role==='opex'||role==='hr')return r.approvals.head.state==='approved'&&r.approvals[role].state==='pending';
+    return false;
+  });
+}
+function monthKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function monthLabel(key){
+  if(!key)return '';
+  const p=key.split('-').map(Number);
+  return new Date(p[0],p[1]-1,1).toLocaleDateString('en-GB',{month:'short',year:'numeric'});
+}
+function availableMonths(){
+  const set={};
+  visible().forEach(function(r){set[r.otDate.slice(0,7)]=1;});
+  set[monthKey(new Date())]=1;
+  return Object.keys(set).sort().reverse();
+}
+function sortRecent(list){return list.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt));});}
+function filtered(){
+  const f=ui.filters,q=f.q.trim().toLowerCase();
+  return sortRecent(visible().filter(function(r){
+    if(f.status==='Pending'&&overall(r)!=='Pending')return false;
+    if(f.status!=='All'&&f.status!=='Pending'&&overall(r)!==f.status)return false;
+    if(f.status==='Pending'&&overall(r)!=='Pending')return false;
+    if(f.dept!=='All'&&r.dept!==f.dept)return false;
+    if(f.from&&r.otDate<f.from)return false;
+    if(f.to&&r.otDate>f.to)return false;
+    if(q){
+      const hay=[r.id,r.dept,r.line,r.requester.name,r.reason].concat(r.employees.map(function(e){return e.name+' '+e.empId;})).join(' ').toLowerCase();
+      if(hay.indexOf(q)<0)return false;
+    }
+    return true;
+  }));
+}
+
+/* ============================ fragments ============================ */
+function badge(r){
+  const s=overall(r);
+  const cls=s==='Approved'?'approved':s==='Rejected'?'rejected':'pending';
+  let label=s;
+  if(s==='Pending'){
+    const done=approvedCount(r);
+    label=(r.approvals.head.state!=='approved')?'Pending · Head':(done?'Pending · '+done+'/3':'Pending');
+  }
+  return '<span class="pill '+cls+'"><span class="dot"></span>'+label+'</span>';
+}
+function statePill(s){
+  const cls=s==='approved'?'approved':s==='rejected'?'rejected':'pending';
+  const label=s==='approved'?'Approved':s==='rejected'?'Rejected':'Pending';
+  return '<span class="pill '+cls+'"><span class="dot"></span>'+label+'</span>';
+}
+function approvalDots(r){
+  return '<span class="approval-dots" title="Dept head: '+r.approvals.head.state+' · OPEX: '+r.approvals.opex.state+' · HR: '+r.approvals.hr.state+'">'+
+    '<span class="adot '+r.approvals.head.state+'" aria-hidden="true"></span>'+
+    '<span class="adot '+r.approvals.opex.state+'" aria-hidden="true"></span>'+
+    '<span class="adot '+r.approvals.hr.state+'" aria-hidden="true"></span></span>';
+}
+function otTypeLabel(t){return t==='Weekend'?'Weekend (2.0x)':t==='Holiday'?'Holiday (2.0x)':'Weekday (1.5x)';}
+
+function requestRow(r){
+  return '<tr>'+
+    '<td><button class="link mono" data-open="'+r.id+'">'+r.id+'</button><div class="sub">'+ago(r.createdAt)+'</div></td>'+
+    '<td class="hide-sm">'+fmtDate(r.otDate)+'<div class="sub">'+esc(r.shift.split(' ')[0])+' · '+esc(r.start)+'-'+esc(r.end)+'</div></td>'+
+    '<td><span class="strong">'+esc(r.dept)+'</span><div class="sub">'+esc(r.line)+'</div></td>'+
+    '<td class="hide-md">'+esc(r.requester.name)+'</td>'+
+    '<td class="num hide-md">'+r.employees.length+'</td>'+
+    '<td class="num">'+hrs(reqHours(r))+' h</td>'+
+    '<td class="num hide-md">'+money(reqCost(r))+'</td>'+
+    '<td class="hide-sm">'+approvalDots(r)+'</td>'+
+    '<td>'+badge(r)+'</td>'+
+    '<td class="num"><button class="btn btn-sm" data-open="'+r.id+'">Review</button></td>'+
+  '</tr>';
+}
+function miniRow(r){
+  return '<tr>'+
+    '<td><button class="link mono" data-open="'+r.id+'">'+r.id+'</button><div class="sub">'+fmtDate(r.otDate)+'</div></td>'+
+    '<td><span class="tag">'+esc(r.dept)+'</span> <span class="muted hide-md">'+esc(r.line)+'</span></td>'+
+    '<td class="num hide-sm">'+r.employees.length+' emp</td>'+
+    '<td class="num">'+hrs(reqHours(r))+' h</td>'+
+    '<td class="num hide-md">'+money(reqCost(r))+'</td>'+
+    '<td>'+badge(r)+'</td>'+
+    '<td class="num"><button class="btn btn-sm" data-open="'+r.id+'">Review</button></td>'+
+  '</tr>';
+}
+
+/* ============================ render: chrome ============================ */
+function renderTopbar(){
+  const u=user();
+  if(!u)return;
+  $('#pageTitle').textContent=TITLES[ui.view]||'Dashboard';
+  $('#pageSub').textContent=SUBS[ui.view]||'';
+  $('#avatar').textContent=u.initials;
+  $('#userName').textContent=u.name;
+  $('#userTitle').textContent=u.title;
+  const themeBtn=$('#themeBtn');
+  themeBtn.innerHTML=icon(ui.theme==='dark'?'sun':'moon');
+  themeBtn.setAttribute('aria-label',ui.theme==='dark'?'Switch to light mode':'Switch to dark mode');
+  const so=$('#signOutBtn');
+  if(so)so.innerHTML=icon('logout');
+}
+function navItems(){
+  const awaiting=ui.role==='requester'
+    ? visible().filter(function(r){return overall(r)==='Pending';}).length
+    : awaitingFor(ui.role).length;
+  return [
+    {v:'dashboard',label:'Dashboard',ic:'dashboard'},
+    {v:'new',label:'New request',ic:'plus',show:ui.role==='requester'},
+    {v:'requests',label:ui.role==='requester'?'My requests':'Requests',ic:'list'},
+    {v:'approvals',label:'Approvals',ic:'checkCircle',show:ui.role==='head'||ui.role==='opex'||ui.role==='hr',badge:awaiting},
+    {v:'registry',label:'Registration',ic:'user',show:canRegister()},
+    {v:'reports',label:'Reports',ic:'chart'},
+    {v:'settings',label:'Settings',ic:'sliders'}
+  ].filter(function(i){return i.show!==false;});
+}
+function renderRail(){
+  const items=navItems();
+  $('#rail').innerHTML=
+    '<div class="brand"><div class="brand-mark">'+icon('clock')+'</div>'+
+    '<div><div class="brand-name">OT Request Portal</div><div class="brand-sub">Factory operations</div></div></div>'+
+    '<nav class="nav" aria-label="Sections">'+
+      '<div class="nav-label">Workspace</div>'+
+      items.map(function(i){
+        return '<button class="nav-item '+(ui.view===i.v?'active':'')+'" data-nav="'+i.v+'"'+(ui.view===i.v?' aria-current="page"':'')+'>'+
+          icon(i.ic)+'<span>'+i.label+'</span>'+(i.badge?'<span class="nav-badge">'+i.badge+'</span>':'')+'</button>';
+      }).join('')+
+    '</nav>'+
+    '<div class="rail-foot">Signed in as <b>'+esc(user().name)+'</b><br>'+esc(user().roleLabel)+' · demo data stays in this browser</div>';
+}
+function renderTabbar(){
+  const wants=['dashboard','new','requests','approvals','reports','settings'];
+  let items=navItems().filter(function(i){return wants.indexOf(i.v)>=0;});
+  if(items.length>5){
+    items=items.filter(function(i){return i.v!=='reports';});
+  }
+  if(items.length>5){
+    items=items.filter(function(i){return i.v!=='settings';});
+  }
+  $('#tabbar').innerHTML=items.map(function(i){
+    return '<button class="tab '+(ui.view===i.v?'active':'')+'" data-nav="'+i.v+'"'+(ui.view===i.v?' aria-current="page"':'')+'>'+
+      icon(i.ic)+'<span>'+i.label.replace('New request','New').replace('My requests','Requests').replace('Registration','Register')+'</span>'+
+      (i.badge?'<span class="tab-badge">'+i.badge+'</span>':'')+'</button>';
+  }).join('');
+}
+
+/* ============================ render: dashboard ============================ */
+function vDashboard(){
+  const list=visible();
+  const months=availableMonths();
+  if(ui.role==='superadmin'){
+    if(!ui.dashMonth)ui.dashMonth=monthKey(new Date());
+    if(months.indexOf(ui.dashMonth)<0)ui.dashMonth=months[0];
+  }
+  const month=(ui.role==='superadmin'&&ui.dashMonth)?ui.dashMonth:monthKey(new Date());
+  const m=list.filter(function(r){return r.otDate.slice(0,7)===month;});
+  const pending=list.filter(function(r){return overall(r)==='Pending';});
+  const queue=(ui.role==='requester'||ui.role==='superadmin'
+      ? pending
+      : awaitingFor(ui.role))
+    .sort(function(a,b){return String(a.createdAt).localeCompare(String(b.createdAt));});
+  const approved=m.filter(function(r){return overall(r)==='Approved';});
+  const rejected=m.filter(function(r){return overall(r)==='Rejected';});
+  const decided=approved.length+rejected.length;
+  const rate=decided?Math.round(approved.length/decided*100):0;
+  const hours=approved.reduce(function(s,r){return s+reqHours(r);},0);
+  const cost=approved.reduce(function(s,r){return s+reqCost(r);},0);
+  const costPending=queue.reduce(function(s,r){return s+reqCost(r);},0);
+  const reqH=m.reduce(function(s,r){return s+reqHours(r);},0);
+  const reqC=m.reduce(function(s,r){return s+reqCost(r);},0);
+  const savedC=Math.max(0,reqC-cost);
+  const savedH=Math.max(0,reqH-hours);
+
+  const deptMap={};
+  m.forEach(function(r){
+    if(overall(r)==='Rejected')return;
+    deptMap[r.dept]=(deptMap[r.dept]||0)+reqHours(r);
+  });
+  const depts=Object.keys(deptMap).sort(function(a,b){return deptMap[b]-deptMap[a];});
+  const max=Math.max(1,depts.length?deptMap[depts[0]]:1);
+
+  const total=m.length;
+  const pctOk=total?approved.length/total*100:0;
+  const pctPend=total?pending.length/total*100:0;
+  const pctBad=total?rejected.length/total*100:0;
+
+  return ''+
+  '<div class="page-head">'+
+    '<div><h2>'+monthLabel(month)+' at a glance</h2><p>'+(ui.role==='requester'?'Your overtime requests and their approval status.':ui.role==='head'?'Requests for '+esc(user().dept)+' across head, OPEX and HR review.':'Plant-wide overtime requests across head, OPEX and HR review.')+'</p></div>'+
+    '<div class="page-actions">'+
+      (ui.role==='requester'
+        ? '<button class="btn btn-primary" data-nav="new">'+icon('plus')+'New request</button>'
+        : ui.role==='superadmin'
+        ? '<div class="field" style="min-width:160px"><label for="dashMonth">Month</label><select id="dashMonth">'+months.map(function(mm){return '<option value="'+mm+'" '+(mm===month?'selected':'')+'>'+monthLabel(mm)+'</option>';}).join('')+'</select></div>'+
+          '<button class="btn btn-primary" data-nav="registry">'+icon('user')+'Registration</button>'
+        : '<button class="btn btn-primary" data-nav="approvals">'+icon('checkCircle')+'Review queue</button>'+
+          (canRegister()?'<button class="btn" data-nav="registry">'+icon('user')+'Register ID</button>':''))+
+      '<button class="btn" data-export="requests">'+icon('download')+'Export CSV</button>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="kpis">'+
+    ((ui.role==='head'||ui.role==='superadmin')
+      ? '<div class="kpi"><div class="kpi-top"><span>Requested OT hours</span>'+icon('clock')+'</div>'+
+          '<div class="val">'+hrs(reqH)+'</div><div class="sub">'+money(reqC)+' requested amount · '+m.length+' requests</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Requested amount</span>'+icon('chart')+'</div>'+
+          '<div class="val">'+money(reqC)+'</div><div class="sub">'+hrs(reqH)+' hours submitted</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Approved OT hours</span>'+icon('bolt')+'</div>'+
+          '<div class="val">'+hrs(hours)+'</div><div class="sub">'+approved.length+' approved requests</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Approved amount</span>'+icon('checkCircle')+'</div>'+
+          '<div class="val">'+money(cost)+'</div><div class="sub">'+hrs(hours)+' hours cleared</div></div>'+
+        '<div class="kpi accent"><div class="kpi-top"><span>Saved amount</span>'+icon('shield')+'</div>'+
+          '<div class="val">'+money(savedC)+'</div><div class="sub">Requested − Approved · '+hrs(savedH)+' hours saved</div></div>'
+      : '<div class="kpi accent"><div class="kpi-top"><span>'+(ui.role==='requester'?'Awaiting decision':'Awaiting your sign-off')+'</span>'+icon('clock')+'</div>'+
+          '<div class="val">'+queue.length+'</div><div class="sub">'+money(costPending)+' estimated cost</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Approved OT hours</span>'+icon('bolt')+'</div>'+
+          '<div class="val">'+hrs(hours)+'</div><div class="sub">'+approved.length+' approved requests this month</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Approved OT cost</span>'+icon('chart')+'</div>'+
+          '<div class="val">'+money(cost)+'</div><div class="sub">'+(ui.role==='requester'?'Your approved requests':'Across all departments')+'</div></div>'+
+        '<div class="kpi"><div class="kpi-top"><span>Approval rate</span>'+icon('shield')+'</div>'+
+          '<div class="val">'+rate+'%</div><div class="sub">'+decided+' decisions · '+rejected.length+' rejected</div></div>')+
+  '</div>'+
+
+  '<div class="dash-grid">'+
+    '<div class="card">'+
+      '<div class="card-head"><h2>'+(ui.role==='requester'?'Your pending requests':ui.role==='superadmin'?'Open requests':'Your action queue')+'</h2><span class="hint">Oldest first</span></div>'+
+      (queue.length
+        ? '<div class="table-wrap"><table class="tbl"><thead><tr><th>Request</th><th>Area</th><th class="num hide-sm">Crew</th><th class="num">Hours</th><th class="num hide-md">Est. cost</th><th>Status</th><th></th></tr></thead><tbody>'+
+          queue.slice(0,6).map(miniRow).join('')+'</tbody></table></div>'
+        : '<div class="empty">'+icon('checkCircle')+'<b>Nothing waiting on you</b><span>'+(ui.role==='requester'?'Create a request to get started.':ui.role==='superadmin'?'There are no open requests right now.':'Your approval queue is clear for now.')+'</span></div>')+
+    '</div>'+
+    '<div class="stack-col">'+
+      '<div class="card"><div class="card-head"><h2>Status this month</h2><span class="hint">'+total+' requests</span></div>'+
+        '<div class="card-pad">'+
+          '<div class="stack" role="img" aria-label="Approved '+approved.length+', pending '+pending.length+', rejected '+rejected.length+'">'+
+            '<span class="s-ok" style="width:'+pctOk+'%"></span><span class="s-pend" style="width:'+pctPend+'%"></span><span class="s-bad" style="width:'+pctBad+'%"></span>'+
+          '</div>'+
+          '<div class="legend"><span><i style="background:var(--ok)"></i>Approved <b>'+approved.length+'</b></span>'+
+          '<span><i style="background:var(--accent)"></i>Pending <b>'+pending.length+'</b></span>'+
+          '<span><i style="background:var(--bad)"></i>Rejected <b>'+rejected.length+'</b></span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="card"><div class="card-head"><h2>OT hours by department</h2><span class="hint">This month</span></div>'+
+        (depts.length?'<div class="bars">'+depts.map(function(d){
+          const v=deptMap[d];
+          return '<div class="bar-row"><span class="bar-name">'+esc(d)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(v/max*100)+'%"></span></span><span class="bar-val">'+hrs(v)+'</span></div>';
+        }).join('')+'</div>':'<div class="empty">'+icon('chart')+'<b>No overtime yet</b><span>Department hours appear once requests are raised.</span></div>')+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+
+  '<div class="card"><div class="card-head"><h2>Recent activity</h2><span class="hint">Latest approvals and submissions</span></div>'+
+    activityList()+
+  '</div>';
+}
+function activityList(){
+  const items=[];
+  visible().forEach(function(r){
+    r.history.forEach(function(h){items.push({at:h.at,by:h.by,role:h.role,action:h.action,note:h.note,rid:r.id});});
+  });
+  items.sort(function(a,b){return String(b.at).localeCompare(String(a.at));});
+  const top=items.slice(0,6);
+  if(!top.length)return '<div class="empty">'+icon('clock')+'<b>No activity yet</b><span>Submissions and decisions will show here.</span></div>';
+  return '<ul class="activity">'+top.map(function(h){
+    const verb=h.action==='submitted'?'submitted':h.action==='approved'?'approved':'rejected';
+    return '<li><span class="act-dot '+h.action+'"></span><div><b>'+esc(h.by)+'</b> <span class="muted">('+esc(h.role)+')</span> '+verb+' <button class="link mono" data-open="'+h.rid+'">'+h.rid+'</button>'+
+      '<div class="meta">'+fmtStamp(h.at)+(h.note?' · '+esc(h.note):'')+'</div></div></li>';
+  }).join('')+'</ul>';
+}
+
+/* ============================ render: requests ============================ */
+function vRequests(){
+  const rows=filtered();
+  const pages=Math.max(1,Math.ceil(rows.length/PS));
+  ui.page=clamp(ui.page,0,pages-1);
+  const slice=rows.slice(ui.page*PS,ui.page*PS+PS);
+  return ''+
+  '<div class="page-head">'+
+    '<div><h2>'+(ui.role==='requester'?'My overtime requests':ui.role==='head'?'Requests · '+esc(user().dept):'All overtime requests')+'</h2><p>'+rows.length+' request'+(rows.length===1?'':'s')+' found · OPEX and HR approve in parallel</p></div>'+
+    '<div class="page-actions">'+
+      (ui.role==='requester'?'<button class="btn btn-primary" data-nav="new">'+icon('plus')+'New request</button>':'')+
+      '<button class="btn" data-export="requests">'+icon('download')+'Export CSV</button>'+
+    '</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="toolbar">'+
+      '<div class="field" style="flex:1 1 220px;max-width:280px"><label for="fltQ">Search</label>'+
+        '<input class="input" id="fltQ" data-filter="q" type="search" placeholder="ID, employee, reason…" value="'+esc(ui.filters.q)+'"></div>'+
+      '<div class="field"><label for="fltStatus">Status</label><select id="fltStatus" data-filter="status">'+
+        ['All','Pending','Approved','Rejected'].map(function(s){return '<option '+(ui.filters.status===s?'selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
+      '<div class="field"><label for="fltDept">Department</label><select id="fltDept" data-filter="dept">'+
+        ['All'].concat(deptNames()).map(function(d){return '<option '+(ui.filters.dept===d?'selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select></div>'+
+      '<div class="field"><label for="fltFrom">From</label><input class="input" id="fltFrom" type="date" data-filter="from" value="'+esc(ui.filters.from)+'"></div>'+
+      '<div class="field"><label for="fltTo">To</label><input class="input" id="fltTo" type="date" data-filter="to" value="'+esc(ui.filters.to)+'"></div>'+
+      '<div class="spacer"></div>'+
+      '<button class="btn btn-sm" data-reset-filters>'+icon('filter')+'Clear</button>'+
+    '</div>'+
+    '<div class="table-wrap"><table class="tbl"><thead><tr>'+
+      '<th>Request</th><th class="hide-sm">OT date</th><th>Department</th><th class="hide-md">Raised by</th><th class="num hide-md">Crew</th><th class="num">Hours</th><th class="num hide-md">Est. cost</th><th class="hide-sm">Approvals</th><th>Status</th><th></th>'+
+    '</tr></thead><tbody id="reqBody">'+(slice.length?slice.map(requestRow).join(''):'<tr><td class="empty-cell" colspan="10">No requests match your filters.</td></tr>')+'</tbody></table></div>'+
+    '<div class="pager"><span id="reqCount">'+rows.length+' request'+(rows.length===1?'':'s')+' · page '+(ui.page+1)+' of '+pages+'</span>'+
+      '<div class="pager-btns" id="reqPager">'+pagerHtml(pages)+'</div></div>'+
+  '</div>';
+}
+function pagerHtml(pages){
+  let out='<button class="btn btn-sm" data-page="'+(ui.page-1)+'" '+(ui.page<=0?'disabled':'')+'>Prev</button>';
+  out+='<button class="btn btn-sm" data-page="'+(ui.page+1)+'" '+(ui.page>=pages-1?'disabled':'')+'>Next</button>';
+  return out;
+}
+function renderReqList(){
+  if(ui.view!=='requests')return;
+  const rows=filtered();
+  const pages=Math.max(1,Math.ceil(rows.length/PS));
+  ui.page=clamp(ui.page,0,pages-1);
+  const slice=rows.slice(ui.page*PS,ui.page*PS+PS);
+  const body=$('#reqBody');
+  if(!body)return;
+  body.innerHTML=slice.length?slice.map(requestRow).join(''):'<tr><td class="empty-cell" colspan="10">No requests match your filters.</td></tr>';
+  const c=$('#reqCount');if(c)c.textContent=rows.length+' request'+(rows.length===1?'':'s')+' · page '+(ui.page+1)+' of '+pages;
+  const p=$('#reqPager');if(p)p.innerHTML=pagerHtml(pages);
+}
+
+/* ============================ render: new request ============================ */
+function vNew(){
+  const today=isoDate(new Date());
+  const myDept=user().dept||deptNames()[0]||'';
+  const lines=deptLines(myDept);
+  const lineOpts=lines.length?lines:['General'];
+  const defLine=lineOpts.indexOf('Packing')>=0?'Packing':lineOpts[0];
+  if(!myDept){
+    return '<div class="page-head"><div><h2>Raise an overtime request</h2><p>Your account has no department yet. Ask OPEX or HR to register you first.</p></div></div>'+
+      '<div class="card"><div class="empty">'+icon('building')+'<b>No department assigned</b><span>Your sign-in ID is not linked to a department.</span></div></div>';
+  }
+  const head=headForDept(myDept);
+  return ''+
+  '<div class="page-head">'+
+    '<div><h2>Raise an overtime request</h2><p>One batch covers a team or shift. Your department head reviews first, then OPEX and HR sign off in parallel.</p></div>'+
+  '</div>'+
+  (head?'':'<div class="notice" style="margin-bottom:13px">'+icon('alert')+'<div><b>No department head registered.</b> This request will stay pending until OPEX or HR assigns a head for '+esc(myDept)+' in the Registry.</div></div>')+
+  '<form id="otForm" novalidate>'+
+    '<div class="form-layout">'+
+      '<div class="form-stack">'+
+        '<div id="formErrors"></div>'+
+        '<section class="card">'+
+          '<div class="card-head"><h2>1 · Request details</h2><span class="hint">Where, when and why</span></div>'+
+          '<div class="card-pad" style="display:flex;flex-direction:column;gap:13px">'+
+            '<div class="grid-2">'+
+              '<div class="field"><label for="f_dept">Department</label><select id="f_dept">'+
+                '<option>'+esc(myDept)+'</option></select><p class="help">Fixed to your department — the head of '+esc(myDept)+' will review it.</p></div>'+
+              '<div class="field"><label for="f_line">Line / area</label><select id="f_line">'+
+                lineOpts.map(function(l){return '<option '+(l===defLine?'selected':'')+'>'+esc(l)+'</option>';}).join('')+'</select></div>'+
+              '<div class="field"><label for="f_shift">Shift</label><select id="f_shift">'+
+                SHIFTS.map(function(s){return '<option '+(s.indexOf('B ')>-1?'selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
+              '<div class="field"><label for="f_cc">Cost center</label><select id="f_cc">'+
+                '<option>'+esc(deptCC(myDept)||'—')+'</option></select></div>'+
+              '<div class="field"><label for="f_date">OT date <span class="req">*</span></label><input class="input" id="f_date" type="date" value="'+today+'"></div>'+
+              '<div class="field"><label for="f_type">OT type</label><select id="f_type">'+
+                Object.keys(OT_TYPES).map(function(t){return '<option value="'+t+'">'+otTypeLabel(t)+'</option>';}).join('')+'</select></div>'+
+              '<div class="field"><label for="f_start">Start time <span class="req">*</span></label><input class="input" id="f_start" type="time" value="18:00"></div>'+
+              '<div class="field"><label for="f_end">End time <span class="req">*</span></label><input class="input" id="f_end" type="time" value="22:00"></div>'+
+              '<div class="field"><label for="f_brk">Unpaid break (minutes)</label><input class="input" id="f_brk" type="number" min="0" max="120" step="5" value="0"></div>'+
+              '<div class="field"><label for="f_priority">Priority</label><select id="f_priority"><option>Normal</option><option>Urgent</option></select></div>'+
+            '</div>'+
+            '<div class="field"><label for="f_reason">Justification <span class="req">*</span></label>'+
+              '<textarea class="input" id="f_reason" rows="3" placeholder="Explain the production need, backlog, breakdown or deadline driving this overtime."></textarea>'+
+              '<p class="help">Minimum 10 characters. Be specific — the department head, OPEX and HR all read this.</p></div>'+
+          '</div>'+
+        '</section>'+
+        '<section class="card">'+
+          '<div class="card-head"><h2>2 · Employees</h2>'+
+            '<div style="display:flex;gap:7px"><button type="button" class="btn btn-sm" data-open-picker>'+icon('users')+'Add from roster</button></div></div>'+
+          '<div class="table-wrap"><table class="tbl" id="empTable">'+
+            '<thead><tr><th>Employee</th><th class="hide-sm">Designation</th><th class="num">OT hours</th><th class="num">Rate / hr</th><th class="num">Amount</th><th></th></tr></thead>'+
+            '<tbody id="empRows"></tbody></table></div>'+
+          '<div class="manual-add">'+
+            '<div class="field"><label for="m_name">Name</label><input class="input" id="m_name" placeholder="Employee name"></div>'+
+            '<div class="field"><label for="m_id">ID</label><input class="input" id="m_id" placeholder="AKJ-00000"></div>'+
+            '<div class="field"><label for="m_desig">Designation</label><input class="input" id="m_desig" placeholder="Operator"></div>'+
+            '<div class="field"><label for="m_rate">Rate / hr</label><input class="input" id="m_rate" type="number" min="0" step="1" placeholder="95"></div>'+
+            '<button type="button" class="btn btn-sm" data-add-manual>'+icon('plus')+'Add</button>'+
+          '</div>'+
+        '</section>'+
+      '</div>'+
+      '<aside class="summary card"><div class="card-pad">'+
+        '<h2 style="font-size:13.5px;margin:0 0 4px">Request summary</h2>'+
+        '<p class="sub" style="margin:0 0 10px">Dept head → OPEX + HR</p>'+
+        '<div class="sum-line"><span>Employees</span><b id="sumEmp">0</b></div>'+
+        '<div class="sum-line"><span>OT window</span><b id="sumWin">4.0 h</b></div>'+
+        '<div class="sum-line"><span>Total OT hours</span><b id="sumHrs">0.0 h</b></div>'+
+        '<div class="sum-line"><span>Multiplier</span><b id="sumMult">1.5x</b></div>'+
+        '<div class="sum-total"><span>Estimated cost</span><b id="sumCost">৳0</b></div>'+
+        '<p class="sum-note">Estimated cost = hours × rate × OT multiplier. HR verifies actual payable hours against attendance before payroll.</p>'+
+        '<button class="btn btn-primary" type="submit" style="width:100%;padding:10px">'+icon('check')+'Submit for approval</button>'+
+        '<button class="btn btn-ghost" type="button" data-reset-draft style="width:100%;margin-top:7px">Clear form</button>'+
+      '</div></aside>'+
+    '</div>'+
+  '</form>';
+}
+
+/* ============================ draft handling ============================ */
+function winHours(){
+  const s=$('#f_start'),e=$('#f_end'),b=$('#f_brk');
+  if(!s||!e||!b)return 0;
+  return windowHours(s.value,e.value,b.value);
+}
+function currentMult(){
+  const t=$('#f_type');
+  return t?(OT_TYPES[t.value]||1.5):1.5;
+}
+function renderDraftTable(){
+  const body=$('#empRows');if(!body)return;
+  if(!ui.draft.employees.length){
+    body.innerHTML='<tr><td colspan="6" class="empty-cell">No employees yet. Add from the roster or enter one manually below.</td></tr>';
+    return;
+  }
+  const m=currentMult();
+  body.innerHTML=ui.draft.employees.map(function(e,i){
+    return '<tr>'+
+      '<td><div class="strong">'+esc(e.name)+'</div><div class="sub mono">'+esc(e.empId)+'</div></td>'+
+      '<td class="hide-sm">'+esc(e.designation)+'</td>'+
+      '<td class="num"><input class="input mini" type="number" min="0" max="16" step="0.5" value="'+e.hours+'" data-emp-hours="'+i+'" aria-label="OT hours for '+escAttr(e.name)+'"></td>'+
+      '<td class="num"><input class="input mini" type="number" min="0" step="5" value="'+e.rate+'" data-emp-rate="'+i+'" aria-label="Hourly rate for '+escAttr(e.name)+'"></td>'+
+      '<td class="num" data-amount="'+i+'">'+money(e.hours*e.rate*m)+'</td>'+
+      '<td class="num"><button type="button" class="icon-btn danger" data-remove-emp="'+i+'" aria-label="Remove '+escAttr(e.name)+'">'+icon('trash')+'</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function escAttr(v){return esc(v).replace(/"/g,'&quot;');}
+function updateAmount(i){
+  const e=ui.draft.employees[i];if(!e)return;
+  const cell=document.querySelector('[data-amount="'+i+'"]');
+  if(cell)cell.textContent=money(e.hours*e.rate*currentMult());
+}
+function syncAutoHours(){
+  const w=winHours();
+  ui.draft.employees.forEach(function(e,i){
+    if(e.auto){e.hours=w;}
+    const inp=document.querySelector('[data-emp-hours="'+i+'"]');
+    if(inp)inp.value=e.hours;
+    updateAmount(i);
+  });
+}
+function updateSummary(){
+  const win=winHours();
+  const total=ui.draft.employees.reduce(function(s,e){return s+(Number(e.hours)||0);},0);
+  const cost=ui.draft.employees.reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0);},0)*currentMult();
+  const se=$('#sumEmp'),sw=$('#sumWin'),sh=$('#sumHrs'),sm=$('#sumMult'),sc=$('#sumCost');
+  if(se)se.textContent=ui.draft.employees.length;
+  if(sw)sw.textContent=hrs(win)+' h';
+  if(sh)sh.textContent=hrs(total)+' h';
+  if(sm)sm.textContent=currentMult().toFixed(1)+'x';
+  if(sc)sc.textContent=money(cost);
+}
+function addManualEmployee(){
+  const name=$('#m_name'),id=$('#m_id'),desig=$('#m_desig'),rate=$('#m_rate');
+  if(!name||!rate)return;
+  const n=name.value.trim();
+  const r=Number(rate.value);
+  if(n.length<2){toast('Enter the employee name first','bad');name.focus();return;}
+  if(!r||r<=0){toast('Enter a valid hourly rate','bad');rate.focus();return;}
+  const w=winHours();
+  ui.draft.employees.push({
+    empId:id.value.trim()||('MAN-'+String(ui.draft.employees.length+1).padStart(3,'0')),
+    name:n,designation:desig.value.trim()||'—',dept:$('#f_dept').value,
+    hours:w>0?w:4,rate:r,auto:true
+  });
+  name.value='';id.value='';desig.value='';rate.value='';
+  renderDraftTable();updateSummary();name.focus();
+}
+function addPickedEmployees(){
+  if(!ui.pick.set)return;
+  const w=winHours();
+  ui.pick.set.forEach(function(id){
+    if(ui.draft.employees.some(function(e){return e.empId===id;}))return;
+    const p=rosterList().find(function(x){return x.empId===id;});
+    if(!p)return;
+    ui.draft.employees.push({empId:p.empId,name:p.name,designation:p.designation,dept:p.dept,hours:w>0?w:4,rate:p.rate,auto:true});
+  });
+  closeModal();
+  renderDraftTable();updateSummary();
+}
+
+/* ============================ render: approvals ============================ */
+function reqCard(r){
+  return '<article class="req-card"><header><span class="mono" style="color:var(--brand-2);font-weight:700">'+r.id+'</span>'+badge(r)+'</header>'+
+    '<div><h3>'+esc(r.dept)+' · '+esc(r.line)+'</h3><div class="when">'+fmtDate(r.otDate)+' · '+esc(r.start)+'-'+esc(r.end)+' · '+esc(r.shift.split(' ')[0])+'</div></div>'+
+    '<div class="mini-stats">'+
+      '<div><b>'+r.employees.length+'</b>employees</div>'+
+      '<div><b>'+hrs(reqHours(r))+' h</b>OT hours</div>'+
+      '<div><b>'+money(reqCost(r))+'</b>est. cost</div>'+
+    '</div>'+
+    '<div class="appr-line">'+statePill(r.approvals.head.state)+statePill(r.approvals.opex.state)+statePill(r.approvals.hr.state)+'</div>'+
+    '<footer><span class="muted" style="font-size:11px">'+esc(r.requester.name)+' · '+ago(r.createdAt)+'</span>'+
+      '<button class="btn btn-sm btn-primary" data-open="'+r.id+'">Review</button></footer></article>';
+}
+function vApprovals(){
+  const role=ui.role;
+  const scope=visible();
+  const queue=awaitingFor(role);
+  const pendingAll=scope.filter(function(r){return overall(r)==='Pending';});
+  const mine=scope.filter(function(r){return r.approvals[role]&&r.approvals[role].at;}).sort(function(a,b){return String(b.approvals[role].at).localeCompare(String(a.approvals[role].at));});
+  const tab=ui.atab;
+  const list=tab==='queue'?queue:tab==='all'?pendingAll:mine;
+  const desc=tab==='mine'
+    ? 'Requests you have already decided.'
+    : (role==='head'
+      ? 'These requests need department head approval before they can move to OPEX and HR.'
+      : 'Department head has approved these. OPEX and HR now sign off in parallel — both are required.');
+  return ''+
+  '<div class="page-head"><div><h2>'+esc(user().roleLabel)+' sign-off queue</h2><p>'+desc+'</p></div></div>'+
+  '<div class="tabs" role="tablist">'+
+    '<button class="tab '+(tab==='queue'?'active':'')+'" data-atab="queue" role="tab" aria-selected="'+(tab==='queue')+'">Awaiting you ('+queue.length+')</button>'+
+    '<button class="tab '+(tab==='all'?'active':'')+'" data-atab="all" role="tab" aria-selected="'+(tab==='all')+'">All pending ('+pendingAll.length+')</button>'+
+    '<button class="tab '+(tab==='mine'?'active':'')+'" data-atab="mine" role="tab" aria-selected="'+(tab==='mine')+'">Decided by you ('+mine.length+')</button>'+
+  '</div>'+
+  (list.length?'<div class="cards-grid">'+list.map(reqCard).join('')+'</div>'
+    :'<div class="card"><div class="empty">'+icon('checkCircle')+'<b>'+(tab==='mine'?'No decisions yet':'Queue is clear')+'</b><span>'+(tab==='mine'?'Requests you approve or reject will be listed here.':'There are no overtime requests awaiting your sign-off.')+'</span></div></div>');
+}
+
+/* ============================ render: reports ============================ */
+function reportRows(){
+  return visible().filter(function(r){return r.otDate.slice(0,7)===ui.reportMonth;});
+}
+function vReports(){
+  const months=availableMonths();
+  if(months.indexOf(ui.reportMonth)<0)ui.reportMonth=months[0];
+  const rows=reportRows();
+  const approved=rows.filter(function(r){return overall(r)==='Approved';});
+  const rejected=rows.filter(function(r){return overall(r)==='Rejected';});
+  const pending=rows.filter(function(r){return overall(r)==='Pending';});
+  const hours=approved.reduce(function(s,r){return s+reqHours(r);},0);
+  const cost=approved.reduce(function(s,r){return s+reqCost(r);},0);
+  const emps=approved.reduce(function(s,r){return s+r.employees.length;},0);
+
+  const byDept={};
+  rows.forEach(function(r){
+    const d=byDept[r.dept]||(byDept[r.dept]={req:0,emp:0,hrs:0,cost:0,ok:0,dec:0});
+    d.req++;
+    d.emp+=r.employees.length;
+    const s=overall(r);
+    if(s!=='Pending')d.dec++;
+    if(s==='Approved'){d.ok++;d.hrs+=reqHours(r);d.cost+=reqCost(r);}
+  });
+  const deptKeys=Object.keys(byDept).sort();
+  const maxCost=Math.max(1,deptKeys.reduce(function(m,d){return Math.max(m,byDept[d].cost);},1));
+
+  return ''+
+  '<div class="page-head"><div><h2>Overtime report</h2><p>Approved hours and cost for the selected month.</p></div>'+
+    '<div class="page-actions">'+
+      '<div class="field" style="min-width:170px"><label for="repMonth">Month</label><select id="repMonth" data-repmonth>'+
+        months.map(function(m){return '<option value="'+m+'" '+(m===ui.reportMonth?'selected':'')+'>'+monthLabel(m)+'</option>';}).join('')+'</select></div>'+
+      '<button class="btn" data-export="month">'+icon('download')+'Export month</button>'+
+    '</div></div>'+
+  '<div class="kpis">'+
+    '<div class="kpi"><div class="kpi-top"><span>Requests</span>'+icon('list')+'</div><div class="val">'+rows.length+'</div><div class="sub">'+approved.length+' approved · '+rejected.length+' rejected</div></div>'+
+    '<div class="kpi"><div class="kpi-top"><span>Approved hours</span>'+icon('bolt')+'</div><div class="val">'+hrs(hours)+'</div><div class="sub">'+pending.length+' still pending</div></div>'+
+    '<div class="kpi"><div class="kpi-top"><span>Approved cost</span>'+icon('chart')+'</div><div class="val">'+money(cost)+'</div><div class="sub">At 1.5x / 2.0x multipliers</div></div>'+
+    '<div class="kpi"><div class="kpi-top"><span>Avg cost / employee</span>'+icon('users')+'</div><div class="val">'+(emps?money(cost/emps):'৳0')+'</div><div class="sub">'+emps+' employee slots approved</div></div>'+
+  '</div>'+
+  '<div class="dash-grid">'+
+    '<div class="card"><div class="card-head"><h2>Department breakdown</h2><span class="hint">'+monthLabel(ui.reportMonth)+'</span></div>'+
+      (deptKeys.length?'<div class="table-wrap"><table class="tbl"><thead><tr><th>Department</th><th class="num">Requests</th><th class="num hide-sm">Crew</th><th class="num">Approved hrs</th><th class="num">Approved cost</th><th class="num hide-sm">Approval rate</th></tr></thead><tbody>'+
+        deptKeys.map(function(d){
+          const v=byDept[d];
+          return '<tr><td class="strong">'+esc(d)+'</td><td class="num">'+v.req+'</td><td class="num hide-sm">'+v.emp+'</td><td class="num">'+hrs(v.hrs)+'</td><td class="num">'+money(v.cost)+'</td><td class="num hide-sm">'+(v.dec?Math.round(v.ok/v.dec*100):0)+'%</td></tr>';
+        }).join('')+'</tbody></table></div>'
+        :'<div class="empty">'+icon('chart')+'<b>No data for this month</b><span>Pick another month or raise a request.</span></div>')+
+    '</div>'+
+    '<div class="card"><div class="card-head"><h2>Approved cost by department</h2><span class="hint">'+monthLabel(ui.reportMonth)+'</span></div>'+
+      (deptKeys.length?'<div class="bars">'+deptKeys.sort(function(a,b){return byDept[b].cost-byDept[a].cost;}).map(function(d){
+        return '<div class="bar-row"><span class="bar-name">'+esc(d)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(byDept[d].cost/maxCost*100)+'%"></span></span><span class="bar-val" style="font-size:11px">'+money(byDept[d].cost)+'</span></div>';
+      }).join('')+'</div>':'<div class="empty">'+icon('chart')+'<b>Nothing approved</b><span>Approved cost appears here.</span></div>')+
+    '</div>'+
+  '</div>';
+}
+
+/* ============================ render: settings ============================ */
+function vSettings(){
+  const bytes=(function(){try{return new Blob([JSON.stringify(state)]).size;}catch(e){return 0;}})();
+  const u=user();
+  const canExport=canExportAll();
+  const canReset=canResetData();
+  const perms={
+    requester:['Raise overtime requests for '+u.dept,'Track the full approval history of your own requests','Export the requests you can see'],
+    head:['Approve or reject requests for '+u.dept,'Gate every request before OPEX and HR review','Register requesters and employees for '+u.dept,'See department-level reports'],
+    opex:['Review all requests after department head approval','Approve or reject on behalf of OPEX','Register department heads and requesters','Reset the demo dataset and export all data'],
+    hr:['Review all requests after department head approval','Approve or reject on behalf of HR','Register department heads and requesters','Export all data for payroll reconciliation'],
+    superadmin:['Create OPEX, HR, department head and super admin IDs','Manage departments and the employee roster','Reset the demo dataset and export all data','View every request and report — no approval rights']
+  }[ui.role]||[];
+  return ''+
+  '<div class="page-head"><div><h2>Settings</h2><p>Signed in as '+esc(u.name)+' · '+esc(u.roleLabel)+(u.role==='head'?' · '+esc(u.dept):'')+'</p></div></div>'+
+  '<div class="settings-grid">'+
+    '<div class="card"><div class="card-pad">'+
+      '<div class="profile"><div class="avatar">'+esc(u.initials)+'</div><div><h3>'+esc(u.name)+'</h3>'+
+        '<div class="sub">'+esc(u.title)+' · '+esc(u.id)+' · @'+esc(u.username)+'</div></div></div>'+
+      '<div style="margin-top:14px"><div class="kpi-top" style="margin-bottom:7px">Your access</div>'+
+        '<ul class="access-list">'+perms.map(function(p){return '<li>'+icon('check')+'<span>'+esc(p)+'</span></li>';}).join('')+'</ul></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'+
+        (canRegister()?'<button class="btn btn-sm" data-nav="registry">'+icon('user')+'Registration</button>':'')+
+        '<button class="btn btn-sm" data-signout>'+icon('logout')+'Sign out</button>'+
+      '</div>'+
+    '</div></div>'+
+    '<div class="card"><div class="card-pad">'+
+      '<h2 style="font-size:13.5px;margin:0 0 8px">Approval workflow</h2>'+
+      '<ol class="flow-list">'+
+        '<li><span class="flow-n">1</span><div><b>Department head</b><span>Checks operational need for their own department.</span></div></li>'+
+        '<li><span class="flow-n">2</span><div><b>OPEX</b><span>Verifies budget and cost justification — after head approval.</span></div></li>'+
+        '<li><span class="flow-n">3</span><div><b>HR</b><span>Verifies hours, rates and labor-law limits — in parallel with OPEX.</span></div></li>'+
+      '</ol>'+
+      '<div class="notice" style="margin-top:12px">'+icon('shield')+'<div>A request needs <b>all three</b> sign-offs. A rejection from any stage closes it immediately as <b>Rejected</b>.</div></div>'+
+    '</div></div>'+
+    '<div class="card"><div class="card-pad">'+
+      '<h2 style="font-size:13.5px;margin:0 0 4px">Data &amp; session</h2>'+
+      '<div class="data-row"><span>Requests stored</span><b>'+state.requests.length+'</b></div>'+
+      '<div class="data-row"><span>Sign-in IDs</span><b>'+allUsers().length+'</b></div>'+
+      '<div class="data-row"><span>Departments</span><b>'+departments().length+'</b></div>'+
+      '<div class="data-row"><span>Employees on roster</span><b>'+rosterList().length+'</b></div>'+
+      '<div class="data-row"><span>Local data size</span><b>'+(bytes/1024).toFixed(1)+' KB</b></div>'+
+      '<div class="data-row"><span>Session</span><b>This tab only</b></div>'+
+      (canExport||canReset?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
+        (canExport?'<button class="btn btn-sm" data-export-json>'+icon('download')+'Export JSON</button>':'')+
+        (canReset?'<button class="btn btn-sm" data-reset>'+icon('trash')+'Reset demo data</button>':'')+
+      '</div>':'<p class="help" style="margin-top:10px">Only OPEX or the super admin can reset the demo dataset. Ask the central team if you need a clean slate.</p>')+
+    '</div></div>'+
+    '<div class="card"><div class="card-pad">'+
+      '<h2 style="font-size:13.5px;margin:0 0 8px">Google Sheet storage</h2>'+
+      '<div class="data-row"><span>Status</span><b id="sheetStatus">Not connected</b></div>'+
+      '<div class="data-row"><span>Last sync</span><b id="sheetLastSync">—</b></div>'+
+      '<div class="data-row"><span>Sheet revision</span><b id="sheetRev">0</b></div>'+
+      '<div id="sheetErr"></div>'+
+      (canExport
+        ? '<div class="field" style="margin-top:10px"><label for="sheetUrl">Apps Script Web App URL</label>'+
+            '<input class="input mono" id="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(sheetCfg.url||'')+'"></div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
+            '<button class="btn btn-sm btn-primary" data-sheet-connect>'+icon('swap')+'Connect &amp; sync</button>'+
+            '<button class="btn btn-sm" data-sheet-sync>'+icon('chart')+'Sync now</button>'+
+            (sheetReady()?'<button class="btn btn-sm" data-sheet-disconnect>'+icon('x')+'Disconnect</button>':'')+
+          '</div>'
+        : '<p class="help" style="margin-top:10px">Only OPEX, HR or the super admin can connect the Google Sheet. Ask the central team to enable shared storage.</p>')+
+      '<p class="help" style="margin-top:10px">Data is saved to this browser first, then pushed to the sheet (auto-sync about 1.5 s after each change). Paste the Web App URL deployed from <span class="mono">Code.gs</span> — see the setup notes in that file.</p>'+
+    '</div></div>'+
+    '<div class="card"><div class="card-pad">'+
+      '<h2 style="font-size:13.5px;margin:0 0 8px">About this build</h2>'+
+      '<p class="modal-msg" style="margin:0">Single-file HTML prototype with local sign-in and a registry for IDs, departments and roster employees. Accounts and passwords are stored in this browser, so it is suitable for a controlled demo — not for production security.</p>'+
+      '<p class="help" style="margin-top:10px">Production next step: move authentication to Supabase Auth, SSO or your ERP, and keep the same screens and approval rules.</p>'+
+    '</div></div>'+
+  '</div>';
+}
+
+/* ============================ render: registry ============================ */
+function nextRegistryId(role){
+  const prefix=role==='superadmin'?'SA-':role==='head'?'H-':'U-';
+  const lo=role==='opex'?2000:role==='hr'?3000:1000;
+  let max=lo;
+  allUsers().forEach(function(u){
+    const id=String(u.id||'');
+    if(id.indexOf(prefix)===0){
+      const n=parseInt(id.slice(prefix.length),10);
+      if(!isNaN(n)&&n>=lo&&n<lo+1000&&n>max)max=n;
+    }
+  });
+  return prefix+(max+1);
+}
+function defaultTitle(role,dept){
+  if(role==='head')return 'Head of '+dept;
+  if(role==='requester')return 'Shift Supervisor · '+dept;
+  if(role==='opex')return 'OPEX Analyst';
+  if(role==='superadmin')return 'Super Admin · Central Team';
+  return 'HR Officer';
+}
+function regErr(id,msgs){
+  const el=$('#'+id);if(!el)return;
+  el.innerHTML=msgs.length?'<div class="alert bad" role="alert">'+icon('alert')+'<div><strong>Check the details</strong><ul>'+msgs.map(function(m){return '<li>'+esc(m)+'</li>';}).join('')+'</ul></div></div>':'';
+}
+function vRegistry(){
+  if(!canRegister())return '';
+  const myDept=ui.role==='head'?user().dept:null;
+  const users=allUsers().filter(function(u){return !myDept||u.dept===myDept;});
+  const deps=departments();
+  const rost=rosterList().filter(function(e){return !myDept||e.dept===myDept;});
+  const assignable=assignableRoles();
+  const names=myDept?[myDept]:deptNames();
+  const defDept=myDept||names[0]||'';
+  const allowedTabs=['users','employees'].concat(canManageDepartments()?['departments']:[],['bulk']);
+  const tab=allowedTabs.indexOf(ui.regTab)>=0?ui.regTab:'users';
+  const pageCopy=ui.role==='superadmin'
+    ? 'Central team control: register OPEX, HR, department heads, requesters, departments and employees.'
+    : ui.role==='head'
+    ? 'Register requesters and employees for '+esc(myDept)+'. OPEX, HR and other heads are created by the central team.'
+    : 'Register department heads, requesters and roster employees. OPEX, HR and super admin IDs come from the central team.';
+  const roleNote=ui.role==='superadmin'
+    ? 'A super admin can create any role, including another super admin. Department is required for requesters and heads.'
+    : ui.role==='head'
+    ? 'You can create requester IDs for '+esc(myDept)+' only. Department is fixed to your department.'
+    : 'You can create department head and requester IDs. OPEX, HR and super admin IDs are created by the central super admin.';
+  const userRows=users.map(function(u){
+    return '<tr><td><div class="strong">'+esc(u.name)+'</div><div class="sub">@'+esc(u.username)+'</div></td>'+
+      '<td class="mono">'+esc(u.id)+'</td>'+
+      '<td>'+esc(u.roleLabel||roleLabelOf(u.role))+'</td>'+
+      '<td>'+esc(u.dept||'—')+'</td></tr>';
+  }).join('');
+  const empRows=rost.map(function(e){
+    return '<tr><td class="mono">'+esc(e.empId)+'</td><td><div class="strong">'+esc(e.name)+'</div><div class="sub">'+esc(e.designation)+'</div></td>'+
+      '<td>'+esc(e.dept)+'<div class="sub">'+esc(e.line||'—')+'</div></td><td class="num">'+money(e.rate)+'</td></tr>';
+  }).join('');
+  const deptRows=deps.map(function(d){
+    const head=headForDept(d.name);
+    const reqs=state.requests.filter(function(r){return r.dept===d.name;}).length;
+    const emps=rost.filter(function(e){return e.dept===d.name;}).length;
+    return '<tr><td><div class="strong">'+esc(d.name)+'</div><div class="sub">'+esc(d.costCenter||'—')+'</div></td>'+
+      '<td>'+(head?'<span class="strong">'+esc(head.name)+'</span><div class="sub">'+esc(head.username)+'</div>':'<span class="pill pending"><span class="dot"></span>No head</span>')+'</td>'+
+      '<td class="hide-sm">'+esc((d.lines||[]).join(', '))+'</td>'+
+      '<td class="num">'+emps+'</td><td class="num">'+reqs+'</td></tr>';
+  }).join('');
+  return ''+
+  '<div class="page-head"><div><h2>Registration</h2><p>'+pageCopy+'</p></div></div>'+
+  '<div class="tabs" role="tablist">'+
+    '<button class="tab '+(tab==='users'?'active':'')+'" data-regtab="users" role="tab" aria-selected="'+(tab==='users')+'">Sign-in IDs ('+users.length+')</button>'+
+    '<button class="tab '+(tab==='employees'?'active':'')+'" data-regtab="employees" role="tab" aria-selected="'+(tab==='employees')+'">Employees ('+rost.length+')</button>'+
+    (canManageDepartments()?'<button class="tab '+(tab==='departments'?'active':'')+'" data-regtab="departments" role="tab" aria-selected="'+(tab==='departments')+'">Departments ('+deps.length+')</button>':'')+
+    '<button class="tab '+(tab==='bulk'?'active':'')+'" data-regtab="bulk" role="tab" aria-selected="'+(tab==='bulk')+'">Bulk import</button>'+
+  '</div>'+
+  (tab==='users'
+    ? '<div class="reg-grid">'+
+        '<div class="card"><div class="card-head"><h2>Register a sign-in ID</h2></div>'+
+          '<form id="regUserForm" class="card-pad" novalidate style="display:flex;flex-direction:column;gap:11px">'+
+            '<div id="regUserErr"></div>'+
+            '<div class="field"><label for="ruName">Full name <span class="req">*</span></label><input class="input" id="ruName" placeholder="e.g. Md. Rafiqul Islam"></div>'+
+            '<div class="grid-2">'+
+              '<div class="field"><label for="ruUsername">Username <span class="req">*</span></label><input class="input" id="ruUsername" placeholder="rafiq" spellcheck="false"></div>'+
+              '<div class="field"><label for="ruPassword">Password <span class="req">*</span></label><input class="input" id="ruPassword" type="password" placeholder="Min 4 characters"></div>'+
+              '<div class="field"><label for="ruRole">Role <span class="req">*</span></label><select id="ruRole">'+
+                assignable.map(function(r){return '<option value="'+r+'">'+roleLabelOf(r)+'</option>';}).join('')+'</select></div>'+
+              '<div class="field"><label for="ruId">ID <span class="req">*</span></label><input class="input mono" id="ruId" value="'+nextRegistryId(assignable[0]||'requester')+'"></div>'+
+            '</div>'+
+            '<div class="field" id="ruDeptField"><label for="ruDept">Department <span class="req">*</span></label><select id="ruDept">'+
+              (names.length?names.map(function(n){return '<option>'+esc(n)+'</option>';}).join(''):'<option value="">No departments yet</option>')+
+            '</select></div>'+
+            '<p class="reg-note">'+roleNote+'</p>'+
+            '<button class="btn btn-primary" type="submit" style="width:100%">'+icon('plus')+'Create sign-in ID</button>'+
+          '</form>'+
+        '</div>'+
+        '<div class="card"><div class="card-head"><h2>Registered IDs</h2><span class="hint">'+users.length+' accounts</span></div>'+
+          '<div class="table-wrap reg-table"><table class="tbl"><thead><tr><th>Name / username</th><th>ID</th><th>Role</th><th>Department</th></tr></thead><tbody>'+
+          (userRows||'<tr><td class="empty-cell" colspan="4">No accounts yet.</td></tr>')+'</tbody></table></div>'+
+        '</div>'+
+      '</div>'
+    : tab==='employees'
+    ? '<div class="reg-grid">'+
+        '<div class="card"><div class="card-head"><h2>Register an employee</h2></div>'+
+          '<form id="regEmpForm" class="card-pad" novalidate style="display:flex;flex-direction:column;gap:11px">'+
+            '<div id="regEmpErr"></div>'+
+            '<div class="grid-2">'+
+              '<div class="field"><label for="reId">Employee ID <span class="req">*</span></label><input class="input mono" id="reId" placeholder="AKJ-10400"></div>'+
+              '<div class="field"><label for="reName">Name <span class="req">*</span></label><input class="input" id="reName" placeholder="Employee name"></div>'+
+              '<div class="field"><label for="reDesig">Designation</label><input class="input" id="reDesig" placeholder="Operator"></div>'+
+              '<div class="field"><label for="reRate">OT rate / hr <span class="req">*</span></label><input class="input" id="reRate" type="number" min="0" step="1" placeholder="95"></div>'+
+              '<div class="field"><label for="reDept">Department <span class="req">*</span></label><select id="reDept">'+
+                (names.length?names.map(function(n){return '<option '+(n===defDept?'selected':'')+'>'+esc(n)+'</option>';}).join(''):'<option value="">No departments yet</option>')+
+              '</select></div>'+
+              '<div class="field"><label for="reLine">Line / area</label><select id="reLine">'+
+                (deptLines(defDept).length?deptLines(defDept):['General']).map(function(l){return '<option>'+esc(l)+'</option>';}).join('')+'</select></div>'+
+            '</div>'+
+            '<button class="btn btn-primary" type="submit" style="width:100%">'+icon('plus')+'Add employee to roster</button>'+
+          '</form>'+
+        '</div>'+
+        '<div class="card"><div class="card-head"><h2>Roster</h2><span class="hint">'+rost.length+' employees</span></div>'+
+          '<div class="table-wrap reg-table"><table class="tbl"><thead><tr><th>ID</th><th>Employee</th><th>Department</th><th class="num">OT rate</th></tr></thead><tbody>'+
+          (empRows||'<tr><td class="empty-cell" colspan="4">No employees yet.</td></tr>')+'</tbody></table></div>'+
+        '</div>'+
+      '</div>'
+    : tab==='departments'
+    ? '<div class="reg-grid">'+
+        '<div class="card"><div class="card-head"><h2>Register a department</h2></div>'+
+          '<form id="regDeptForm" class="card-pad" novalidate style="display:flex;flex-direction:column;gap:11px">'+
+            '<div id="regDeptErr"></div>'+
+            '<div class="field"><label for="rdName">Department name <span class="req">*</span></label><input class="input" id="rdName" placeholder="e.g. Quality"></div>'+
+            '<div class="field"><label for="rdCc">Cost center</label><input class="input" id="rdCc" placeholder="e.g. CC-4000 Quality"></div>'+
+            '<div class="field"><label for="rdLines">Lines / areas</label><input class="input" id="rdLines" placeholder="Lab, In-process, Final"><p class="help">Comma separated. Defaults to “General”.</p></div>'+
+            '<p class="reg-note">After creating the department, add a “Dept head” sign-in ID for it in the IDs tab. Requests route to that head first.</p>'+
+            '<button class="btn btn-primary" type="submit" style="width:100%">'+icon('plus')+'Create department</button>'+
+          '</form>'+
+        '</div>'+
+        '<div class="card"><div class="card-head"><h2>Departments</h2><span class="hint">'+deps.length+' departments</span></div>'+
+          '<div class="table-wrap reg-table"><table class="tbl"><thead><tr><th>Department</th><th>Head</th><th class="hide-sm">Lines</th><th class="num">Employees</th><th class="num">Requests</th></tr></thead><tbody>'+
+          (deptRows||'<tr><td class="empty-cell" colspan="5">No departments yet.</td></tr>')+'</tbody></table></div>'+
+        '</div>'+
+      '</div>'
+    : bulkPanel());
+}
+function bulkPanel(){
+  let type=ui.bulkType||'users';
+  const allowedTypes=[['users','Sign-in IDs'],['employees','Employees']];
+  if(canManageDepartments())allowedTypes.push(['departments','Departments']);
+  if(!allowedTypes.some(function(o){return o[0]===type;}))type='users';
+  const specs={
+    users:{label:'Sign-in IDs',
+      cols:'name, username, password, role, id, department',
+      sample:'Md. Abdul Karim, karim2, 1234, requester, , Production',
+      note:'role: requester | head | opex | hr. Leave id blank to auto-generate. Department is required for requester and head rows.'},
+    employees:{label:'Employees',
+      cols:'emp_id, name, designation, department, line, rate',
+      sample:'AKJ-10500, New Operator, Operator, Production, Line 1, 95',
+      note:'emp_id must be unique. Department must already exist. Line is optional and defaults to General.'},
+    departments:{label:'Departments',
+      cols:'name, cost_center, lines',
+      sample:'Finishing, CC-5000 Finishing, Coating|Cutting',
+      note:'Department names must be unique. Separate lines with | or ; — commas are treated as CSV separators.'}
+  };
+  const spec=specs[type]||specs.users;
+  return ''+
+  '<div class="reg-grid">'+
+    '<div class="card"><div class="card-head"><h2>Bulk import</h2><span class="hint">Paste rows or upload a CSV</span></div>'+
+      '<form id="bulkForm" class="card-pad" novalidate style="display:flex;flex-direction:column;gap:11px">'+
+        '<div class="field"><label for="bulkType">Record type</label><select id="bulkType">'+
+          allowedTypes.map(function(o){
+            return '<option value="'+o[0]+'" '+(type===o[0]?'selected':'')+'>'+o[1]+'</option>';
+          }).join('')+'</select></div>'+
+        '<div class="bulk-cols">'+esc(spec.cols)+'<br>Example: '+esc(spec.sample)+'</div>'+
+        '<p class="help">'+esc(spec.note)+'</p>'+
+        '<div class="field"><label for="bulkFile">Upload CSV / TXT (optional)</label><input class="input file-input" type="file" id="bulkFile" accept=".csv,.txt,text/csv,text/plain"></div>'+
+        '<div class="field"><label for="bulkData">Rows</label><textarea class="input" id="bulkData" rows="8" spellcheck="false" placeholder="Paste rows here or choose a file above."></textarea></div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+          '<button type="button" class="btn btn-sm" data-bulk-template>'+icon('download')+'Download template</button>'+
+          '<button type="submit" class="btn btn-primary btn-sm">'+icon('check')+'Import rows</button>'+
+        '</div>'+
+        '<div id="bulkResult">'+bulkResultHtml(ui.bulkResult)+'</div>'+
+      '</form>'+
+    '</div>'+
+    '<div class="card"><div class="card-pad">'+
+      '<h2 style="font-size:13.5px;margin:0 0 8px">How bulk import works</h2>'+
+      '<ul class="access-list">'+
+        '<li>'+icon('check')+'<span>One record per line. A header row is optional and detected automatically.</span></li>'+
+        '<li>'+icon('check')+'<span>Comma-separated by default; pasted spreadsheet rows with tabs also work.</span></li>'+
+        '<li>'+icon('check')+'<span>Wrap a value in double quotes if it contains a comma.</span></li>'+
+        '<li>'+icon('check')+'<span>Duplicates and invalid rows are skipped and listed with the reason.</span></li>'+
+        '<li>'+icon('check')+'<span>For sign-in IDs, blank IDs auto-generate and blank passwords default to 1234.</span></li>'+
+        '<li>'+icon('check')+'<span>Import departments first, then employees, then sign-in IDs.</span></li>'+
+      '</ul>'+
+      '<div class="notice" style="margin-top:12px">'+icon('shield')+'<div>Imports apply immediately and are stored in this browser. Review the skipped rows before sharing access.</div></div>'+
+    '</div></div>'+
+  '</div>';
+}
+function bulkResultHtml(res){
+  if(!res)return '';
+  const skipped=res.skipped||[];
+  const cls=res.added?'ok':'bad';
+  let out='<div class="alert '+cls+'" role="status">'+icon(res.added?'checkCircle':'alert')+'<div>'+
+    '<strong>'+res.added+' of '+res.total+' row'+(res.total===1?'':'s')+' imported.</strong>';
+  if(skipped.length){
+    out+='<ul>'+skipped.slice(0,10).map(function(s){
+      return '<li>Row '+s.row+': '+esc(s.reason)+'</li>';
+    }).join('')+(skipped.length>10?'<li>…and '+(skipped.length-10)+' more.</li>':'')+'</ul>';
+  }
+  return out+'</div></div>';
+}
+function splitCsvLine(line,delim){
+  const out=[];let cur='';let quoted=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(quoted){
+      if(c==='"'){
+        if(line[i+1]==='"'){cur+='"';i++;}
+        else quoted=false;
+      }else cur+=c;
+    }else{
+      if(c==='"')quoted=true;
+      else if(c===delim){out.push(cur);cur='';}
+      else cur+=c;
+    }
+  }
+  out.push(cur);
+  return out.map(function(s){return s.trim();});
+}
+function parseBulkTable(text){
+  const lines=String(text||'').replace(/\r\n?/g,'\n').split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  if(!lines.length)return [];
+  const delim=(lines[0].split('\t').length>lines[0].split(',').length)?'\t':',';
+  let rows=lines.map(function(l){return splitCsvLine(l,delim);});
+  const first=String(rows[0][0]||'').trim().toLowerCase().replace(/\s+/g,' ');
+  if(['name','full name','emp_id','emp id','employee id','id','department','department name'].indexOf(first)>=0)rows=rows.slice(1);
+  return rows;
+}
+function parseBulkRole(raw){
+  const s=String(raw||'').trim().toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
+  if(!s||s==='requester'||s==='supervisor'||s==='shift supervisor')return 'requester';
+  if(s==='head'||s==='dept head'||s==='department head')return 'head';
+  if(s==='opex')return 'opex';
+  if(s==='hr'||s==='human resource'||s==='human resources')return 'hr';
+  if(s==='superadmin'||s==='super admin'||s==='admin'||s==='central admin')return 'superadmin';
+  return null;
+}
+function canonicalDept(raw){
+  const s=String(raw||'').trim();
+  if(!s)return '';
+  const found=deptNames().find(function(n){return n.toLowerCase()===s.toLowerCase();});
+  return found||s;
+}
+function handleBulkImport(form){
+  if(!canRegister())return;
+  const type=$('#bulkType').value;
+  const text=$('#bulkData').value;
+  const box=$('#bulkResult');
+  if(type==='departments'&&!canManageDepartments()){
+    if(box)box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div>Your role cannot import departments.</div></div>';
+    return;
+  }
+  if(!text.trim()){
+    if(box)box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div>Paste some rows or choose a CSV file first.</div></div>';
+    return;
+  }
+  const rows=parseBulkTable(text);
+  if(!rows.length){
+    if(box)box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div>No usable rows were found.</div></div>';
+    return;
+  }
+  const skipped=[];
+  let added=0;
+  rows.forEach(function(row,idx){
+    const rowNo=idx+1;
+    const reason=[];
+    if(type==='users'){
+      const name=(row[0]||'').trim();
+      const username=(row[1]||'').trim().toLowerCase();
+      const password=(row[2]||'').trim()||'1234';
+      const role=parseBulkRole(row[3]);
+      const idRaw=(row[4]||'').trim();
+      const deptRaw=(row[5]||'').trim();
+      const dept=ui.role==='head'?user().dept:canonicalDept(deptRaw);
+      const id=idRaw||(role?nextRegistryId(role):'');
+      if(name.length<2)reason.push('missing name');
+      if(!/^[a-z0-9._-]{3,}$/.test(username))reason.push('invalid username');
+      if(password.length<4)reason.push('password must be 4+ characters');
+      if(!role)reason.push('invalid role');
+      if(role&&assignableRoles().indexOf(role)<0)reason.push('role not allowed for your access');
+      if(!id)reason.push('missing ID');
+      if(id&&findUser(id))reason.push('ID already exists');
+      if(username&&findUserByUsername(username))reason.push('username already exists');
+      if(role==='requester'||role==='head'){
+        if(!dept||!deptDef(dept))reason.push('department missing or unknown');
+      }
+      if(reason.length){skipped.push({row:rowNo,reason:reason.join(', ')});return;}
+      const finalDept=role==='opex'?'OPEX':role==='hr'?'Human Capital':role==='superadmin'?'Central':dept;
+      state.users.push({
+        id:id,key:id,username:username,password:password,name:name,role:role,
+        roleLabel:roleLabelOf(role),title:defaultTitle(role,finalDept),dept:finalDept,
+        initials:initialsOf(name),demo:false
+      });
+      added++;
+    }else if(type==='employees'){
+      const empId=(row[0]||'').trim();
+      const name=(row[1]||'').trim();
+      const designation=(row[2]||'').trim()||'—';
+      const dept=ui.role==='head'?user().dept:canonicalDept(row[3]);
+      const line=(row[4]||'').trim()||'General';
+      const rate=Number(row[5]);
+      if(!empId)reason.push('missing emp_id');
+      if(empId&&rosterList().some(function(e){return e.empId===empId;}))reason.push('emp_id already exists');
+      if(name.length<2)reason.push('missing name');
+      if(!dept||!deptDef(dept))reason.push('department missing or unknown');
+      if(!(rate>0))reason.push('invalid rate');
+      if(reason.length){skipped.push({row:rowNo,reason:reason.join(', ')});return;}
+      state.roster.push({empId:empId,name:name,designation:designation,dept:dept,line:line,rate:rate});
+      added++;
+    }else{
+      const name=(row[0]||'').trim();
+      const cc=(row[1]||'').trim();
+      const linesRaw=(row[2]||'').trim();
+      const lines=linesRaw.split(/[|;]/).map(function(s){return s.trim();}).filter(Boolean);
+      if(name.length<2)reason.push('missing department name');
+      if(name&&deptDef(name))reason.push('department already exists');
+      if(reason.length){skipped.push({row:rowNo,reason:reason.join(', ')});return;}
+      state.departments.push({
+        name:name,
+        costCenter:cc||('CC-'+name.toUpperCase().replace(/\s+/g,'').slice(0,6)),
+        lines:lines.length?lines:['General']
+      });
+      added++;
+    }
+  });
+  save();
+  ui.bulkResult={type:type,added:added,total:rows.length,skipped:skipped};
+  ui.regTab='bulk';
+  toast(added+' row'+(added===1?'':'s')+' imported'+(skipped.length?' · '+skipped.length+' skipped':''),added?'ok':'bad');
+  renderMain();
+}
+function downloadBulkTemplate(){
+  const type=ui.bulkType||'users';
+  const map={
+    users:{head:'name,username,password,role,id,department',sample:'Md. Abdul Karim,karim2,1234,requester,,Production'},
+    employees:{head:'emp_id,name,designation,department,line,rate',sample:'AKJ-10500,New Operator,Operator,Production,Line 1,95'},
+    departments:{head:'name,cost_center,lines',sample:'Finishing,CC-5000 Finishing,Coating|Cutting'}
+  };
+  const t=map[type]||map.users;
+  download('ot-'+type+'-template.csv','\ufeff'+t.head+'\r\n'+t.sample);
+  toast('Template downloaded — replace the sample row and import','ok');
+}
+function handleRegUser(form){
+  if(!canRegister())return;
+  const errs=[];
+  const name=$('#ruName').value.trim();
+  const username=$('#ruUsername').value.trim().toLowerCase();
+  const password=$('#ruPassword').value;
+  const role=$('#ruRole').value;
+  const id=$('#ruId').value.trim();
+  let dept=$('#ruDept').value;
+  const assignable=assignableRoles();
+  if(name.length<2)errs.push('Enter the full name.');
+  if(!/^[a-z0-9._-]{3,}$/.test(username))errs.push('Username must be at least 3 characters (letters, numbers, dot, dash or underscore).');
+  if(password.length<4)errs.push('Password must be at least 4 characters.');
+  if(assignable.indexOf(role)<0)errs.push('Your role cannot create '+(roleLabelOf(role))+ ' IDs.');
+  if(!id)errs.push('Enter an ID.');
+  else if(/\s/.test(id))errs.push('The ID cannot contain spaces.');
+  if(findUser(id))errs.push('That ID already exists.');
+  if(findUserByUsername(username))errs.push('That username is already taken.');
+  if(ui.role==='head')dept=user().dept;
+  if(role==='requester'||role==='head'){
+    if(!deptDef(dept))errs.push('Choose a valid department.');
+  }else if(role==='opex'){
+    dept='OPEX';
+  }else if(role==='hr'){
+    dept='Human Capital';
+  }else if(role==='superadmin'){
+    dept='Central';
+  }
+  if(errs.length){regErr('regUserErr',errs);return;}
+  state.users.push({
+    id:id,key:id,username:username,password:password,name:name,role:role,
+    roleLabel:roleLabelOf(role),title:defaultTitle(role,dept),dept:dept,
+    initials:initialsOf(name),demo:false
+  });
+  save();
+  toast('Sign-in ID '+id+' created for '+name,'ok');
+  ui.regTab='users';
+  renderMain();
+}
+function handleRegEmployee(form){
+  if(!canRegister())return;
+  const errs=[];
+  const empId=$('#reId').value.trim();
+  const name=$('#reName').value.trim();
+  const designation=$('#reDesig').value.trim()||'—';
+  const dept=ui.role==='head'?user().dept:$('#reDept').value;
+  const line=$('#reLine').value||'General';
+  const rate=Number($('#reRate').value);
+  if(!empId)errs.push('Enter the employee ID.');
+  if(rosterList().some(function(e){return e.empId===empId;}))errs.push('That employee ID is already on the roster.');
+  if(name.length<2)errs.push('Enter the employee name.');
+  if(!deptDef(dept))errs.push('Choose a valid department.');
+  if(!(rate>0))errs.push('Enter a valid OT rate per hour.');
+  if(errs.length){regErr('regEmpErr',errs);return;}
+  state.roster.push({empId:empId,name:name,designation:designation,dept:dept,line:line,rate:rate});
+  save();
+  toast(empId+' added to the roster','ok');
+  ui.regTab='employees';
+  renderMain();
+}
+function handleRegDepartment(form){
+  if(!canManageDepartments())return;
+  const errs=[];
+  const name=$('#rdName').value.trim();
+  const cc=$('#rdCc').value.trim();
+  const lines=$('#rdLines').value.split(',').map(function(s){return s.trim();}).filter(Boolean);
+  if(name.length<2)errs.push('Enter a department name.');
+  if(deptDef(name))errs.push('That department already exists.');
+  if(errs.length){regErr('regDeptErr',errs);return;}
+  state.departments.push({name:name,costCenter:cc||('CC-'+name.toUpperCase().replace(/\s+/g,'').slice(0,6)),lines:lines.length?lines:['General']});
+  save();
+  toast('Department '+name+' created','ok');
+  ui.regTab='departments';
+  renderMain();
+}
+function regSyncRole(){
+  const roleEl=$('#ruRole');if(!roleEl)return;
+  const role=roleEl.value;
+  const deptField=$('#ruDeptField');
+  if(deptField)deptField.style.display=(role==='opex'||role==='hr'||role==='superadmin')?'none':'';
+  const idEl=$('#ruId');
+  if(idEl)idEl.value=nextRegistryId(role);
+}
+function regSyncEmpLines(){
+  const deptEl=$('#reDept');if(!deptEl)return;
+  const sel=$('#reLine');if(!sel)return;
+  const lines=deptLines(deptEl.value);
+  sel.innerHTML=(lines.length?lines:['General']).map(function(l){return '<option>'+esc(l)+'</option>';}).join('');
+}
+
+/* ============================ render: main ============================ */
+function renderMain(){
+  let html='';
+  if(ui.view==='dashboard')html=vDashboard();
+  else if(ui.view==='new'&&ui.role==='requester')html=vNew();
+  else if(ui.view==='requests')html=vRequests();
+  else if(ui.view==='approvals'&&(ui.role==='head'||ui.role==='opex'||ui.role==='hr'))html=vApprovals();
+  else if(ui.view==='registry'&&canRegister())html=vRegistry();
+  else if(ui.view==='reports')html=vReports();
+  else if(ui.view==='settings')html=vSettings();
+  else html=vDashboard();
+  const main=$('#main');
+  main.innerHTML=html;
+  if(ui.view==='new'&&ui.role==='requester'){renderDraftTable();updateSummary();}
+  if(ui.view==='reports'){
+    const sel=$('#repMonth');
+    if(sel)sel.value=ui.reportMonth;
+  }
+}
+function renderAll(){
+  ui.theme=document.documentElement.dataset.theme||'light';
+  renderTopbar();renderRail();renderTabbar();renderMain();
+  if(ui.view==='settings')renderSheetStatus();
+}
+
+/* ============================ drawer ============================ */
+function openDrawer(id){
+  const r=state.requests.find(function(x){return x.id===id;});
+  if(!r)return;
+  ui.drawer=id;
+  const role=ui.role;
+  const can=canDecide(r,role);
+  const s=overall(r);
+  const notes={opex:'',hr:''};
+  const hist=r.history.slice().sort(function(a,b){return String(a.at).localeCompare(String(b.at));});
+  $('#drawerHost').innerHTML=
+  '<div class="drawer-wrap open"><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dTitle">'+
+    '<header class="drawer-head">'+
+      '<div><div class="drawer-id mono">'+r.id+'</div><h2 id="dTitle">'+esc(r.dept)+' · '+esc(r.line)+'</h2>'+
+        '<div class="muted" style="font-size:12px">'+fmtDate(r.otDate)+' · '+esc(r.start)+'-'+esc(r.end)+' · '+esc(r.shift)+'</div></div>'+
+      '<div class="drawer-head-right">'+badge(r)+'<button class="icon-btn" data-close-drawer aria-label="Close details">'+icon('x')+'</button></div>'+
+    '</header>'+
+    '<div class="drawer-body">'+
+      (r.priority==='Urgent'&&s==='Pending'?'<div class="alert bad" style="margin:0">'+icon('alert')+'<div><strong>Urgent request.</strong> Raising supervisor requested priority handling.</div></div>':'')+
+      '<section class="drawer-sec"><h3>Request</h3><dl class="meta-grid">'+
+        '<div><dt>Raised by</dt><dd>'+esc(r.requester.name)+'<div class="sub">'+esc(r.requester.title)+'</div></dd></div>'+
+        '<div><dt>Submitted</dt><dd>'+fmtStamp(r.createdAt)+'</dd></div>'+
+        '<div><dt>Department</dt><dd>'+esc(r.dept)+'</dd></div>'+
+        '<div><dt>Line / area</dt><dd>'+esc(r.line)+'</dd></div>'+
+        '<div><dt>OT type</dt><dd>'+esc(otTypeLabel(r.otType))+'</dd></div>'+
+        '<div><dt>Cost center</dt><dd>'+esc(r.costCenter)+'</dd></div>'+
+        '<div><dt>Break deducted</dt><dd>'+(Number(r.breakMin)||0)+' min</dd></div>'+
+        '<div><dt>Priority</dt><dd>'+esc(r.priority)+'</dd></div>'+
+      '</dl></section>'+
+      '<section class="drawer-sec"><h3>Justification</h3><div class="reason">'+esc(r.reason)+'</div></section>'+
+      '<section class="drawer-sec"><h3>Employees · '+r.employees.length+'</h3>'+
+        '<div class="table-wrap" style="border:1px solid var(--line);border-radius:10px"><table class="tbl"><thead><tr><th>Employee</th><th class="hide-sm">Designation</th><th class="num">Hours</th><th class="num">Rate</th><th class="num">Amount</th></tr></thead><tbody>'+
+          r.employees.map(function(e){
+            return '<tr><td><div class="strong">'+esc(e.name)+'</div><div class="sub mono">'+esc(e.empId)+'</div></td><td class="hide-sm">'+esc(e.designation)+'</td><td class="num">'+hrs(e.hours)+'</td><td class="num">'+money(e.rate)+'</td><td class="num">'+money(e.hours*e.rate*r.multiplier)+'</td></tr>';
+          }).join('')+
+        '</tbody></table></div>'+
+        '<div class="total-row" style="margin-top:9px"><span>'+r.employees.length+' employees · '+hrs(reqHours(r))+' OT hours · '+r.multiplier.toFixed(1)+'x</span><b>'+money(reqCost(r))+'</b></div>'+
+      '</section>'+
+      '<section class="drawer-sec"><h3>Approvals · head → OPEX + HR</h3><div class="appr-grid">'+
+        approvalCard(r,'head')+approvalCard(r,'opex')+approvalCard(r,'hr')+
+      '</div></section>'+
+      '<section class="drawer-sec"><h3>History</h3><ul class="timeline">'+
+        hist.map(function(h){
+          return '<li><span class="tl-dot '+h.action+'"></span><div><b>'+esc(h.by)+'</b> <span class="muted">('+esc(h.role)+')</span> '+
+            (h.action==='submitted'?'submitted the request':h.action==='approved'?'approved':'rejected')+
+            '<div class="sub">'+fmtStamp(h.at)+'</div>'+(h.note?'<div class="hist-note">'+esc(h.note)+'</div>':'')+'</div></li>';
+        }).join('')+
+      '</ul></section>'+
+    '</div>'+
+    '<footer class="drawer-foot">'+
+      '<button class="btn btn-ghost" data-print>'+icon('print')+'Print</button>'+
+      '<span class="grow"></span>'+
+      (can
+        ? '<button class="btn btn-danger" data-decide="rejected" data-id="'+r.id+'">'+icon('x')+'Reject</button>'+
+          '<button class="btn btn-primary" data-decide="approved" data-id="'+r.id+'">'+icon('check')+'Approve</button>'
+        : '<span class="muted" style="font-size:12px">'+(s!=='Pending'?'Decision recorded':role==='requester'
+            ? (r.approvals.head.state!=='approved'?'Awaiting department head approval':'Awaiting OPEX and HR sign-off')
+            : (r.approvals.head.state!=='approved'?'Awaiting department head approval':'No action required from your role'))+'</span>')+
+    '</footer>'+
+  '</aside></div>';
+  document.body.classList.add('no-scroll');
+  const closeBtn=$('#drawerHost [data-close-drawer]');
+  if(closeBtn)closeBtn.focus();
+}
+function approvalCard(r,k){
+  const a=r.approvals[k];
+  const labels={head:'Department head',opex:'OPEX review',hr:'HR review'};
+  return '<div class="appr-card '+a.state+'">'+
+    '<div class="appr-head"><span class="appr-title">'+labels[k]+'</span>'+statePill(a.state)+'</div>'+
+    '<div class="sub">'+(a.by?esc(a.by)+' · '+fmtStamp(a.at):(k==='head'?'Awaiting '+esc((headForDept(r.dept)||{}).name||'department head'):'Awaiting sign-off'))+'</div>'+
+    (a.adjusted?'<div class="adj-note">'+icon('swap')+'<span>OT hours adjusted: '+esc(a.adjusted)+'</span></div>':'')+
+    (a.comment?'<p class="appr-note">“'+esc(a.comment)+'”</p>':'')+
+  '</div>';
+}
+function closeDrawer(){
+  ui.drawer=null;
+  $('#drawerHost').innerHTML='';
+  document.body.classList.remove('no-scroll');
+}
+
+/* ============================ modals ============================ */
+function openDecision(id,decision){
+  const r=state.requests.find(function(x){return x.id===id;});
+  if(!r)return;
+  const role=ui.role;
+  if(!canDecide(r,role)){toast('This request is not awaiting your sign-off','bad');return;}
+  const reject=decision==='rejected';
+  const canEdit=!reject&&(role==='opex'||role==='hr');
+  const hoursBlock=canEdit
+    ? '<div><div class="reg-head" style="margin:0 0 6px">Adjust OT hours</div>'+
+        '<div class="dec-hours"><table class="tbl"><thead><tr><th>Employee</th><th class="num">Hours</th><th class="num hide-sm">Rate</th><th class="num">Amount</th></tr></thead><tbody id="decHours">'+
+          r.employees.map(function(e,i){
+            return '<tr><td><div class="strong">'+esc(e.name)+'</div><div class="sub mono">'+esc(e.empId)+'</div></td>'+
+              '<td class="num"><input class="input dec-mini" type="number" min="0.5" max="16" step="0.5" value="'+e.hours+'" data-dec-hours="'+i+'" data-rate="'+e.rate+'" aria-label="OT hours for '+escAttr(e.name)+'"></td>'+
+              '<td class="num hide-sm">'+money(e.rate)+'</td>'+
+              '<td class="num" data-dec-amount="'+i+'">'+money(e.hours*e.rate*r.multiplier)+'</td></tr>';
+          }).join('')+
+        '</tbody></table></div>'+
+        '<div class="dec-total" style="margin-top:7px"><span>Total <b id="decTotalHours">'+hrs(reqHours(r))+' h</b> · <b id="decTotalCost">'+money(reqCost(r))+'</b></span><span class="muted" style="font-size:11px">Cost recalculates automatically</span></div>'+
+        '<p class="help">You can change hours before approving. Every adjustment is written to the audit trail.</p>'+
+      '</div>'
+    : '';
+  $('#modalHost').innerHTML=
+  '<div class="modal-wrap"><form class="modal '+(canEdit?'wide':'')+'" id="decisionForm" data-id="'+r.id+'" data-decision="'+decision+'" data-mult="'+r.multiplier+'" role="dialog" aria-modal="true" aria-labelledby="decTitle">'+
+    '<div class="modal-head"><div><h2 id="decTitle">'+(reject?'Reject':'Approve')+' '+r.id+'</h2>'+
+      '<p>'+esc(r.dept)+' · '+esc(r.line)+' · '+fmtDate(r.otDate)+'</p></div>'+
+      '<button type="button" class="icon-btn" data-close-modal aria-label="Close">'+icon('x')+'</button></div>'+
+    '<div class="modal-body">'+
+      '<div class="notice">'+icon('shield')+'<div>You are signing as <b>'+esc(user().name)+' · '+esc(user().roleLabel)+'</b>. '+
+        (reject?'A rejection closes the request immediately.'
+          : role==='head'?'Your approval forwards this request to OPEX and HR.'
+          : 'The department head has approved. OPEX and HR sign off in parallel; both are required.')+'</div></div>'+
+      hoursBlock+
+      '<div class="field"><label for="decNote">Comment '+(reject?'<span class="req">*</span>':'<span class="muted">(optional)</span>')+'</label>'+
+        '<textarea class="input" id="decNote" rows="3" placeholder="'+(reject?'Explain what must change before resubmission':'Add a note for the audit trail')+'"></textarea>'+
+        '<p class="help" id="decErr">'+(reject?'A reason is required for rejections.':'')+'</p></div>'+
+    '</div>'+
+    '<div class="modal-foot"><button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>'+
+      '<button type="submit" class="btn '+(reject?'btn-danger':'btn-primary')+'">'+(reject?'Reject request':'Approve request')+'</button></div>'+
+  '</form></div>';
+  const ta=$('#decNote');if(ta)ta.focus();
+}
+function updateDecTotals(){
+  const form=$('#decisionForm');if(!form)return;
+  const mult=Number(form.dataset.mult)||1.5;
+  let th=0,cost=0;
+  $$('#decHours [data-dec-hours]').forEach(function(inp){
+    const h=Math.max(0,Number(inp.value)||0);
+    const rate=Number(inp.dataset.rate)||0;
+    th+=h;cost+=h*rate*mult;
+    const cell=document.querySelector('[data-dec-amount="'+inp.dataset.decHours+'"]');
+    if(cell)cell.textContent=money(h*rate*mult);
+  });
+  const thEl=$('#decTotalHours');if(thEl)thEl.textContent=hrs(th)+' h';
+  const tc=$('#decTotalCost');if(tc)tc.textContent=money(cost);
+}
+function submitDecision(form){
+  const id=form.dataset.id,decision=form.dataset.decision;
+  const note=($('#decNote').value||'').trim();
+  let changes=[];
+  const inputs=$$('#decHours [data-dec-hours]');
+  if(inputs.length){
+    for(let i=0;i<inputs.length;i++){
+      const inp=inputs[i];
+      const h=Number(inp.value);
+      if(!(h>0)||h>16){
+        const e=$('#decErr');if(e){e.textContent='Each OT hours value must be between 0.5 and 16.';e.style.color='var(--bad)';}
+        inp.focus();return;
+      }
+      changes.push({index:Number(inp.dataset.decHours),hours:Math.round(h*10)/10});
+    }
+  }
+  if(decision==='rejected'&&note.length<5){
+    const e=$('#decErr');if(e){e.textContent='Please give a short reason (at least 5 characters).';e.style.color='var(--bad)';}
+    $('#decNote').focus();return;
+  }
+  decide(id,ui.role,decision,note,changes);
+}
+function decide(id,role,decision,note,changes){
+  const r=state.requests.find(function(x){return x.id===id;});
+  if(!r)return;
+  if(!canDecide(r,role)){toast('This request is no longer awaiting your sign-off','bad');return;}
+  const at=new Date().toISOString();
+  const actor=user();
+  const adjustments=[];
+  (changes||[]).forEach(function(c){
+    const e=r.employees[c.index];
+    if(!e)return;
+    const old=Number(e.hours)||0;
+    const nv=Number(c.hours)||0;
+    if(Math.abs(nv-old)>0.001){
+      e.hours=nv;
+      adjustments.push(e.name+': '+hrs(old)+' → '+hrs(nv)+' h');
+    }
+  });
+  const adjText=adjustments.join('; ');
+  r.approvals[role]={state:decision,by:actor.name,at:at,comment:note||'',adjusted:adjText};
+  const histNote=[note,adjText?'OT hours adjusted — '+adjText:''].filter(Boolean).join(' · ');
+  r.history.push({at:at,by:actor.name,role:ROLE_LABEL[role],action:decision,note:histNote});
+  save();
+  closeModal();
+  const s=overall(r);
+  if(decision==='approved'){
+    if(s==='Approved')toast(r.id+' fully approved by head, OPEX and HR','ok');
+    else if(role==='head')toast(r.id+' approved by the department head — sent to OPEX and HR','ok');
+    else toast(r.id+' approved by '+ROLE_LABEL[role]+' — awaiting '+(role==='opex'?'HR':'OPEX'),'ok');
+  }else{
+    toast(r.id+' rejected by '+(role==='head'?'the department head':ROLE_LABEL[role]),'bad');
+  }
+  renderAll();
+  if(ui.drawer)openDrawer(ui.drawer);
+}
+function openPicker(){
+  ui.pick.set=new Set();
+  ui.pick.query='';
+  ui.pick.dept=($('#f_dept')?$('#f_dept').value:'All')||'All';
+  $('#modalHost').innerHTML=
+  '<div class="modal-wrap"><div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="pickTitle">'+
+    '<div class="modal-head"><div><h2 id="pickTitle">Add employees from roster</h2><p>Select one or more people for this batch.</p></div>'+
+      '<button type="button" class="icon-btn" data-close-modal aria-label="Close">'+icon('x')+'</button></div>'+
+    '<div class="modal-body">'+
+      '<div class="pick-search">'+
+        '<input class="input" id="pickSearch" type="search" placeholder="Search name, ID or designation">'+
+        '<select id="pickDept">'+['All'].concat(deptNames()).map(function(d){return '<option '+(d===ui.pick.dept?'selected':'')+'>'+esc(d)+'</option>';}).join('')+'</select>'+
+      '</div>'+
+      '<div class="pick-list" id="pickList"></div>'+
+    '</div>'+
+    '<div class="modal-foot"><span class="pick-count" id="pickCount">0 selected</span><span style="flex:1"></span>'+
+      '<button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>'+
+      '<button type="button" class="btn btn-primary" id="addPicked" data-add-picked disabled>Add 0 employees</button></div>'+
+  '</div></div>';
+  renderPickList();
+  const s=$('#pickSearch');if(s)s.focus();
+}
+function renderPickList(){
+  const host=$('#pickList');if(!host)return;
+  const q=ui.pick.query.toLowerCase();
+  const list=rosterList().filter(function(e){
+    if(ui.pick.dept!=='All'&&e.dept!==ui.pick.dept)return false;
+    if(!q)return true;
+    return (e.name+' '+e.empId+' '+e.designation+' '+e.dept).toLowerCase().indexOf(q)>=0;
+  });
+  host.innerHTML=list.length?list.map(function(e){
+    return '<label class="pick-row"><input type="checkbox" data-pick="'+e.empId+'" '+(ui.pick.set.has(e.empId)?'checked':'')+'>'+
+      '<span class="pick-main"><b>'+esc(e.name)+'</b><span class="sub">'+esc(e.empId)+' · '+esc(e.designation)+' · '+esc(e.dept)+'</span></span>'+
+      '<span class="rate">'+money(e.rate)+'/hr</span></label>';
+  }).join(''):'<div class="empty">'+icon('users')+'<b>No employees found</b><span>Try a different search or department.</span></div>';
+  updatePickCount();
+}
+function updatePickCount(){
+  const n=ui.pick.set.size;
+  const c=$('#pickCount');if(c)c.textContent=n+' selected';
+  const b=$('#addPicked');if(b){b.disabled=n===0;b.textContent='Add '+n+' employee'+(n===1?'':'s');}
+}
+function closeModal(){
+  $('#modalHost').innerHTML='';
+  pendingConfirm=null;
+}
+function confirmDialog(title,body,label,fn){
+  pendingConfirm=fn;
+  $('#modalHost').innerHTML=
+  '<div class="modal-wrap"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cfTitle">'+
+    '<div class="modal-head"><div><h2 id="cfTitle">'+esc(title)+'</h2></div><button type="button" class="icon-btn" data-close-modal aria-label="Close">'+icon('x')+'</button></div>'+
+    '<div class="modal-body"><p class="modal-msg">'+esc(body)+'</p></div>'+
+    '<div class="modal-foot"><button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>'+
+      '<button type="button" class="btn btn-danger" data-do-confirm>'+esc(label)+'</button></div>'+
+  '</div></div>';
+}
+
+/* ============================ actions ============================ */
+function go(view){
+  if(view==='new'&&ui.role!=='requester')view='dashboard';
+  if(view==='approvals'&&ui.role!=='head'&&ui.role!=='opex'&&ui.role!=='hr')view='dashboard';
+  if(view==='registry'&&!canRegister())view='dashboard';
+  ui.view=view;
+  ui.page=0;
+  if(view==='new')ui.draft={employees:[]};
+  if(ui.drawer)closeDrawer();
+  renderAll();
+  const main=$('#main');
+  if(main)main.focus({preventScroll:true});
+  window.scrollTo({top:0,behavior:'auto'});
+}
+function signIn(username,password){
+  const name=String(username||'').trim().toLowerCase();
+  const acc=findUserByUsername(name);
+  if(!acc||acc.password!==password)return 'Invalid username or password.';
+  try{sessionStorage.setItem(SESSION_KEY,acc.id);}catch(e){}
+  ui.userKey=acc.id;
+  ui.role=acc.role;
+  ui.view='dashboard';
+  ui.filters={q:'',status:'All',dept:'All',from:'',to:''};
+  ui.page=0;ui.atab='queue';ui.drawer=null;
+  hideAuth();
+  renderAll();
+  toast('Welcome, '+acc.name,'ok');
+  return '';
+}
+function signOut(){
+  try{sessionStorage.removeItem(SESSION_KEY);}catch(e){}
+  ui.userKey=null;ui.role='guest';ui.view='dashboard';ui.drawer=null;
+  ui.draft={employees:[]};
+  closeDrawer();closeModal();
+  hideApp();
+  renderAuth();
+}
+function hideAuth(){const h=$('#authHost');if(h){h.hidden=true;h.innerHTML='';}$('#appShell').hidden=false;$('#tabbar').hidden=false;}
+function hideApp(){$('#appShell').hidden=true;$('#tabbar').hidden=true;const h=$('#authHost');if(h)h.hidden=false;}
+function renderAuth(){
+  const rows=allUsers().filter(function(u){return u.demo;}).map(function(u){
+    return '<button type="button" class="demo-row" data-fill="'+esc(u.username)+'">'+
+      '<span class="demo-who"><b>'+esc(u.name)+'</b><span>'+esc(u.title)+(u.role==='head'?' · '+esc(u.dept):'')+'</span></span>'+
+      '<span class="demo-role">'+esc(u.roleLabel||roleLabelOf(u.role))+'</span>'+
+      '<span class="demo-user">'+esc(u.username)+'</span></button>';
+  }).join('');
+  $('#authHost').innerHTML=
+  '<div class="auth-shell">'+
+    '<section class="auth-brand">'+
+      '<div class="brand"><div class="brand-mark">'+icon('clock')+'</div>'+
+        '<div><div class="brand-name">OT Request Portal</div><div class="brand-sub">Factory operations</div></div></div>'+
+      '<div><h2>Overtime control for the factory floor</h2>'+
+        '<p class="lead">Raise, route and approve overtime with a clear audit trail — department head first, then OPEX and HR.</p></div>'+
+      '<ul class="auth-points">'+
+        '<li>'+icon('checkCircle')+'<div><b>Controlled access</b><br>Only signed-in supervisors can raise requests.</div></li>'+
+        '<li>'+icon('users')+'<div><b>Department head gate</b><br>Nothing reaches OPEX or HR until the head signs off.</div></li>'+
+        '<li>'+icon('shield')+'<div><b>Parallel OPEX + HR</b><br>Both must approve; either can reject with a written reason.</div></li>'+
+      '</ul>'+
+      '<div class="auth-foot">OT Request Portal · demo build<br>All data stays in this browser.</div>'+
+    '</section>'+
+    '<section class="auth-form">'+
+      '<div><h1>Sign in</h1><p class="sub">Use your factory account to continue.</p></div>'+
+      '<div id="loginError"></div>'+
+      '<form id="loginForm" novalidate>'+
+        '<div class="field"><label for="loginUser">Username</label><input class="input" id="loginUser" autocomplete="username" placeholder="e.g. rafiq" spellcheck="false" required></div>'+
+        '<div class="field"><label for="loginPass">Password</label><div class="pass-wrap">'+
+          '<input class="input" id="loginPass" type="password" autocomplete="current-password" placeholder="Demo password: 1234" required>'+
+          '<button type="button" class="pass-toggle" data-toggle-pass>Show</button></div></div>'+
+        '<button class="btn btn-primary" type="submit" style="width:100%;padding:10px">Sign in</button>'+
+      '</form>'+
+      '<div class="auth-demo">'+
+        '<div class="hdr"><b>Demo accounts</b><span>Click to fill · password 1234</span></div>'+
+        '<div class="demo-list">'+rows+'</div>'+
+      '</div>'+
+      '<p class="auth-note">Demo authentication runs entirely in this file. For production, connect Supabase Auth, SSO or your ERP. Need an ID? Ask your department head, OPEX, HR or the central super admin.</p>'+
+    '</section>'+
+  '</div>';
+  const f=$('#loginUser');if(f)f.focus();
+}
+function handleLogin(form){
+  const username=$('#loginUser').value;
+  const password=$('#loginPass').value;
+  const box=$('#loginError');
+  if(!username.trim()||!password){
+    box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div>Enter both your username and password.</div></div>';
+    return;
+  }
+  const err=signIn(username,password);
+  if(err){
+    box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div>'+esc(err)+'</div></div>';
+    $('#loginPass').value='';
+    $('#loginPass').focus();
+  }else{
+    box.innerHTML='';
+  }
+}
+function setTheme(t){
+  ui.theme=t;
+  document.documentElement.dataset.theme=t;
+  try{localStorage.setItem(THEME_KEY,t);}catch(e){}
+  renderTopbar();
+}
+let toastTimer=null;
+function toast(msg,kind){
+  const host=$('#toast');
+  if(!host)return;
+  host.innerHTML='<div class="toast-in '+(kind||'')+'">'+icon(kind==='bad'?'alert':'checkCircle')+'<span>'+esc(msg)+'</span></div>';
+  host.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){host.classList.remove('show');},3200);
+}
+function nextId(){
+  const d=new Date();
+  const yy=String(d.getFullYear()).slice(2),mm=String(d.getMonth()+1).padStart(2,'0');
+  state.seq=(Number(state.seq)||0)+1;
+  return 'OT-'+yy+mm+'-'+String(state.seq).padStart(3,'0');
+}
+function submitRequest(form){
+  const errs=[];let firstInvalid=null;
+  function err(msg,el){errs.push(msg);if(!firstInvalid)firstInvalid=el;}
+  const dept=$('#f_dept').value;
+  const otDate=$('#f_date').value;
+  const start=$('#f_start').value;
+  const end=$('#f_end').value;
+  const brk=Number($('#f_brk').value)||0;
+  const reason=($('#f_reason').value||'').trim();
+  const win=windowHours(start,end,brk);
+
+  if(!otDate)err('Choose the OT date.',$('#f_date'));
+  if(!start||!end)err('Set both a start and end time.',$('#f_start'));
+  else if(win<=0)err('The OT window is zero. Check the times and break.',$('#f_end'));
+  else if(win>16)err('A single OT window cannot exceed 16 hours.',$('#f_end'));
+  if(!ui.draft.employees.length)err('Add at least one employee.',$('#empTable'));
+  ui.draft.employees.forEach(function(e){
+    if(!(Number(e.hours)>0))err('OT hours are missing for '+e.name+'.',$('#empTable'));
+    if(Number(e.hours)>16)err(e.name+' exceeds 16 OT hours.',$('#empTable'));
+    if(!(Number(e.rate)>0))err('Hourly rate is missing for '+e.name+'.',$('#empTable'));
+  });
+  if(reason.length<10)err('The justification must be at least 10 characters.',$('#f_reason'));
+
+  if(errs.length){
+    const box=$('#formErrors');
+    if(box){
+      box.innerHTML='<div class="alert bad" role="alert">'+icon('alert')+'<div><strong>Fix '+errs.length+' item'+(errs.length===1?'':'s')+' before submitting</strong><ul>'+errs.map(function(m){return '<li>'+esc(m)+'</li>';}).join('')+'</ul></div></div>';
+      box.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    if(firstInvalid&&firstInvalid.focus)firstInvalid.focus({preventScroll:true});
+    return;
+  }
+
+  const now=new Date().toISOString();
+  const u=user();
+  const emps=ui.draft.employees.map(function(e){return {empId:e.empId,name:e.name,designation:e.designation,hours:Number(e.hours),rate:Number(e.rate)};});
+  const mult=currentMult();
+  const r={
+    id:nextId(),createdAt:now,
+    requester:{id:u.id,name:u.name,title:u.title,dept:u.dept},
+    dept:dept,line:$('#f_line').value,shift:$('#f_shift').value,costCenter:$('#f_cc').value,
+    otDate:otDate,start:start,end:end,breakMin:brk,
+    otType:$('#f_type').value,multiplier:mult,priority:$('#f_priority').value,
+    reason:reason,
+    employees:emps,
+    requestedHours:emps.reduce(function(s,e){return s+(Number(e.hours)||0);},0),
+    requestedCost:emps.reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0)*mult;},0),
+    approvals:{head:{state:'pending',by:null,at:null,comment:''},opex:{state:'pending',by:null,at:null,comment:''},hr:{state:'pending',by:null,at:null,comment:''}},
+    history:[{at:now,by:u.name,role:'Requester',action:'submitted',note:''}]
+  };
+  state.requests.unshift(r);
+  save();
+  ui.draft={employees:[]};
+  toast(r.id+' submitted — sent to the '+r.dept+' head for review','ok');
+  go('requests');
+  openDrawer(r.id);
+}
+
+/* ============================ export / print ============================ */
+function download(name,text,type){
+  try{
+    const blob=new Blob([text],{type:type||'text/csv;charset=utf-8'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
+  }catch(e){toast('Download failed in this browser','bad');}
+}
+function toCsv(rows){
+  const head=['Request ID','OT date','Department','Line','Shift','Raised by','Employees','OT hours','Est. cost (BDT)','OT type','Multiplier','Dept head','OPEX','HR','Status','Reason'];
+  const lines=[head].concat(rows.map(function(r){
+    return [r.id,r.otDate,r.dept,r.line,r.shift,r.requester.name,r.employees.length,hrs(reqHours(r)),Math.round(reqCost(r)),r.otType,r.multiplier,r.approvals.head.state,r.approvals.opex.state,r.approvals.hr.state,overall(r),r.reason];
+  }));
+  return lines.map(function(row){
+    return row.map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(',');
+  }).join('\r\n');
+}
+function exportRequests(){
+  const rows=(ui.view==='requests')?filtered():sortRecent(visible());
+  if(!rows.length){toast('No requests to export','bad');return;}
+  download('overtime-requests-'+isoDate(new Date())+'.csv','\ufeff'+toCsv(rows));
+  toast(rows.length+' requests exported','ok');
+}
+function exportMonth(){
+  const rows=reportRows();
+  if(!rows.length){toast('No requests in '+monthLabel(ui.reportMonth),'bad');return;}
+  download('overtime-report-'+ui.reportMonth+'.csv','\ufeff'+toCsv(rows));
+  toast('Report for '+monthLabel(ui.reportMonth)+' exported','ok');
+}
+function exportJson(){
+  if(!canExportAll()){toast('Only OPEX, HR and the super admin can export the full dataset','bad');return;}
+  download('ot-portal-data-'+isoDate(new Date())+'.json',JSON.stringify(state,null,2),'application/json');
+  toast('Full dataset exported','ok');
+}
+function confirmReset(){
+  if(!canResetData()){toast('Only OPEX or the super admin can reset the demo data','bad');return;}
+  confirmDialog('Reset demo data?','This removes every request stored in this browser and reloads the sample dataset. This cannot be undone.','Reset data',function(){
+    state=seed();save();closeModal();closeDrawer();
+    ui.view='dashboard';ui.page=0;
+    renderAll();toast('Demo data reset','ok');
+  });
+}
+function printRequest(id){
+  const r=state.requests.find(function(x){return x.id===id;});
+  if(!r)return;
+  const s=overall(r);
+  const w=window.open('','_blank','width=840,height=920');
+  if(!w){toast('Allow pop-ups to print this request','bad');return;}
+  const rows=r.employees.map(function(e){
+    return '<tr><td>'+esc(e.name)+'<div class="m">'+esc(e.empId)+'</div></td><td>'+esc(e.designation)+'</td><td class="n">'+hrs(e.hours)+'</td><td class="n">'+money(e.rate)+'</td><td class="n">'+money(e.hours*e.rate*r.multiplier)+'</td></tr>';
+  }).join('');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+r.id+'</title><style>'+
+    'body{font-family:"Segoe UI",Arial,sans-serif;color:#0c1a2a;margin:32px;font-size:12px;line-height:1.5}'+
+    'h1{font-size:19px;margin:0 0 2px}h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6b7c91;margin:22px 0 6px;border-bottom:1px solid #dde4ec;padding-bottom:4px}'+
+    '.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #123a63;padding-bottom:12px}'+
+    '.id{font-family:Consolas,monospace;color:#1d5b93;font-weight:bold}.muted{color:#6b7c91}.m{color:#6b7c91;font-size:10px}'+
+    'table{width:100%;border-collapse:collapse;margin-top:4px}th,td{padding:6px 8px;border-bottom:1px solid #dde4ec;text-align:left;vertical-align:top}'+
+    'th{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#6b7c91}td.n,th.n{text-align:right}'+
+    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:6px}'+
+    '.kv{display:flex;justify-content:space-between;border-bottom:1px dashed #e6ebf1;padding:4px 0}.kv b{font-weight:600}'+
+    '.total{display:flex;justify-content:space-between;background:#f6f8fb;border:1px solid #dde4ec;border-radius:6px;padding:9px 11px;margin-top:8px;font-size:13px}'+
+    '.appr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.appr.three{grid-template-columns:1fr 1fr 1fr}.box{border:1px solid #dde4ec;border-radius:6px;padding:9px 11px}'+
+    '.sig{margin-top:46px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:26px}.sig div{border-top:1px solid #333;padding-top:5px;font-size:10px;color:#6b7c91}'+
+    '.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:bold}'+
+    '.ok{background:#e6f4ea;color:#157f3c}.pend{background:#fff3dc;color:#8a5a00}.bad{background:#fdeceb;color:#b3261e}'+
+    '.printbar{position:fixed;top:14px;right:16px;display:flex;gap:8px}'+
+    '.pbtn{font:inherit;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid #1d5b93;background:#1d5b93;color:#fff;cursor:pointer}'+
+    '.pbtn.ghost{background:#fff;color:#33455a;border-color:#dde4ec}'+
+    '@media print{body{margin:14mm}.printbar{display:none}}</style></head><body>'+
+    '<div class="printbar"><button class="pbtn ghost" onclick="window.close()">Close</button><button class="pbtn" onclick="window.print()">Print / Save as PDF</button></div>'+
+    '<div class="head"><div><h1>Overtime Request</h1><div class="id">'+r.id+'</div></div>'+
+    '<div style="text-align:right"><span class="pill '+(s==='Approved'?'ok':s==='Rejected'?'bad':'pend')+'">'+s+'</span><div class="muted" style="margin-top:6px">Printed '+new Date().toLocaleString('en-GB')+'</div></div></div>'+
+    '<h2>Request details</h2><div class="grid">'+
+      '<div class="kv"><span class="muted">Raised by</span><b>'+esc(r.requester.name)+'</b></div>'+
+      '<div class="kv"><span class="muted">Submitted</span><b>'+fmtStamp(r.createdAt)+'</b></div>'+
+      '<div class="kv"><span class="muted">Department</span><b>'+esc(r.dept)+' / '+esc(r.line)+'</b></div>'+
+      '<div class="kv"><span class="muted">Shift</span><b>'+esc(r.shift)+'</b></div>'+
+      '<div class="kv"><span class="muted">OT date</span><b>'+fmtDate(r.otDate)+'</b></div>'+
+      '<div class="kv"><span class="muted">Window</span><b>'+esc(r.start)+'-'+esc(r.end)+' ('+(Number(r.breakMin)||0)+'m break)</b></div>'+
+      '<div class="kv"><span class="muted">OT type</span><b>'+esc(otTypeLabel(r.otType))+'</b></div>'+
+      '<div class="kv"><span class="muted">Cost center</span><b>'+esc(r.costCenter)+'</b></div>'+
+    '</div>'+
+    '<h2>Justification</h2><div>'+esc(r.reason)+'</div>'+
+    '<h2>Employees</h2><table><thead><tr><th>Employee</th><th>Designation</th><th class="n">Hours</th><th class="n">Rate/hr</th><th class="n">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="total"><span>'+r.employees.length+' employees · '+hrs(reqHours(r))+' OT hours · '+r.multiplier.toFixed(1)+'x multiplier</span><b>'+money(reqCost(r))+'</b></div>'+
+    '<h2>Approvals</h2><div class="appr three">'+
+      '<div class="box"><b>Department head</b><div class="muted">'+(r.approvals.head.by?esc(r.approvals.head.by)+' · '+fmtStamp(r.approvals.head.at):'Pending')+'</div>'+(r.approvals.head.comment?'<div>'+esc(r.approvals.head.comment)+'</div>':'')+'</div>'+
+      '<div class="box"><b>OPEX review</b><div class="muted">'+(r.approvals.opex.by?esc(r.approvals.opex.by)+' · '+fmtStamp(r.approvals.opex.at):'Pending')+'</div>'+(r.approvals.opex.comment?'<div>'+esc(r.approvals.opex.comment)+'</div>':'')+'</div>'+
+      '<div class="box"><b>HR review</b><div class="muted">'+(r.approvals.hr.by?esc(r.approvals.hr.by)+' · '+fmtStamp(r.approvals.hr.at):'Pending')+'</div>'+(r.approvals.hr.comment?'<div>'+esc(r.approvals.hr.comment)+'</div>':'')+'</div>'+
+    '</div>'+
+    '<div class="sig"><div>Raised by</div><div>Dept head</div><div>OPEX approval</div><div>HR approval</div></div>'+
+    '</body></html>');
+  w.document.close();
+}
+
+/* ============================ events ============================ */
+document.addEventListener('click',function(e){
+  const t=e.target;
+  if(t.classList&&t.classList.contains('drawer-wrap')){closeDrawer();return;}
+  if(t.classList&&t.classList.contains('modal-wrap')){closeModal();return;}
+  const closeD=t.closest('[data-close-drawer]');if(closeD){closeDrawer();return;}
+  const closeM=t.closest('[data-close-modal]');if(closeM){closeModal();return;}
+  const so=t.closest('[data-signout]');if(so){signOut();return;}
+  const fill=t.closest('[data-fill]');if(fill){
+    const a=findUserByUsername(fill.dataset.fill);
+    if(a){$('#loginUser').value=a.username;$('#loginPass').value=a.password;$('#loginPass').focus();}
+    return;
+  }
+  const tp=t.closest('[data-toggle-pass]');if(tp){
+    const inp=$('#loginPass');
+    if(inp){const show=inp.type==='password';inp.type=show?'text':'password';tp.textContent=show?'Hide':'Show';}
+    return;
+  }
+  const nav=t.closest('[data-nav]');if(nav){go(nav.dataset.nav);return;}
+  const opn=t.closest('[data-open]');if(opn){openDrawer(opn.dataset.open);return;}
+  const dec=t.closest('[data-decide]');if(dec){openDecision(dec.dataset.id,dec.dataset.decide);return;}
+  const rm=t.closest('[data-remove-emp]');if(rm){ui.draft.employees.splice(Number(rm.dataset.removeEmp),1);renderDraftTable();updateSummary();return;}
+  const man=t.closest('[data-add-manual]');if(man){addManualEmployee();return;}
+  const pick=t.closest('[data-open-picker]');if(pick){openPicker();return;}
+  const addP=t.closest('[data-add-picked]');if(addP){addPickedEmployees();return;}
+  const pg=t.closest('[data-page]');if(pg){ui.page=Number(pg.dataset.page);renderReqList();return;}
+  const tab=t.closest('[data-atab]');if(tab){ui.atab=tab.dataset.atab;renderMain();return;}
+  const rtab=t.closest('[data-regtab]');if(rtab){ui.regTab=rtab.dataset.regtab;if(rtab.dataset.regtab!=='bulk')ui.bulkResult=null;renderMain();return;}
+  const btmp=t.closest('[data-bulk-template]');if(btmp){downloadBulkTemplate();return;}
+  const exp=t.closest('[data-export]');if(exp){if(exp.dataset.export==='month')exportMonth();else exportRequests();return;}
+  const pr=t.closest('[data-print]');if(pr){printRequest(ui.drawer);return;}
+  const th=t.closest('[data-theme-toggle]');if(th){setTheme(ui.theme==='dark'?'light':'dark');return;}
+  const rs=t.closest('[data-reset]');if(rs){confirmReset();return;}
+  const js=t.closest('[data-export-json]');if(js){exportJson();return;}
+  const shC=t.closest('[data-sheet-connect]');if(shC){sheetConnect();return;}
+  const shS=t.closest('[data-sheet-sync]');if(shS){sheetSyncNow();return;}
+  const shD=t.closest('[data-sheet-disconnect]');if(shD){sheetDisconnect();return;}
+  const dc=t.closest('[data-do-confirm]');if(dc){const fn=pendingConfirm;pendingConfirm=null;if(fn)fn();return;}
+  const rf=t.closest('[data-reset-filters]');if(rf){ui.filters={q:'',status:'All',dept:'All',from:'',to:''};ui.page=0;renderAll();return;}
+  const rd=t.closest('[data-reset-draft]');if(rd){ui.draft={employees:[]};renderDraftTable();updateSummary();const b=$('#formErrors');if(b)b.innerHTML='';return;}
+});
+document.addEventListener('input',function(e){
+  const el=e.target;
+  if(el.matches('[data-filter]')){ui.filters[el.dataset.filter]=el.value;ui.page=0;renderReqList();return;}
+  if(el.matches('[data-dec-hours]')){updateDecTotals();return;}
+  if(el.matches('[data-emp-hours]')){
+    const i=Number(el.dataset.empHours);const v=clamp(Number(el.value)||0,0,16);
+    ui.draft.employees[i].hours=v;ui.draft.employees[i].auto=false;updateAmount(i);updateSummary();return;
+  }
+  if(el.matches('[data-emp-rate]')){
+    const i=Number(el.dataset.empRate);const v=Math.max(0,Number(el.value)||0);
+    ui.draft.employees[i].rate=v;updateAmount(i);updateSummary();return;
+  }
+  if(el.id==='pickSearch'){ui.pick.query=el.value;renderPickList();return;}
+  if(el.id==='f_start'||el.id==='f_end'||el.id==='f_brk'){syncAutoHours();updateSummary();return;}
+});
+document.addEventListener('change',function(e){
+  const el=e.target;
+  if(el.matches('[data-filter]')){ui.filters[el.dataset.filter]=el.value;ui.page=0;renderReqList();return;}
+  if(el.id==='f_dept'){updateLines();return;}
+  if(el.id==='f_type'){renderDraftTable();updateSummary();return;}
+  if(el.id==='ruRole'){regSyncRole();return;}
+  if(el.id==='reDept'){regSyncEmpLines();return;}
+  if(el.id==='bulkType'){ui.bulkType=el.value;ui.bulkResult=null;renderMain();return;}
+  if(el.id==='bulkFile'){
+    const f=el.files&&el.files[0];
+    if(!f)return;
+    if(f.size>1024*1024){toast('File is larger than 1 MB','bad');return;}
+    const reader=new FileReader();
+    reader.onload=function(){
+      const ta=$('#bulkData');
+      if(ta)ta.value=String(reader.result||'');
+      toast('File loaded — review the rows, then import','ok');
+    };
+    reader.readAsText(f);
+    return;
+  }
+  if(el.id==='pickDept'){ui.pick.dept=el.value;renderPickList();return;}
+  if(el.matches('[data-pick]')){if(el.checked)ui.pick.set.add(el.dataset.pick);else ui.pick.set.delete(el.dataset.pick);updatePickCount();return;}
+  if(el.id==='repMonth'){ui.reportMonth=el.value;renderMain();return;}
+  if(el.id==='dashMonth'){ui.dashMonth=el.value;renderMain();return;}
+});
+document.addEventListener('submit',function(e){
+  if(e.target.id==='loginForm'){e.preventDefault();handleLogin(e.target);}
+  else if(e.target.id==='otForm'){e.preventDefault();submitRequest(e.target);}
+  else if(e.target.id==='decisionForm'){e.preventDefault();submitDecision(e.target);}
+  else if(e.target.id==='regUserForm'){e.preventDefault();handleRegUser(e.target);}
+  else if(e.target.id==='regEmpForm'){e.preventDefault();handleRegEmployee(e.target);}
+  else if(e.target.id==='regDeptForm'){e.preventDefault();handleRegDepartment(e.target);}
+  else if(e.target.id==='bulkForm'){e.preventDefault();handleBulkImport(e.target);}
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if($('#modalHost').children.length){closeModal();return;}
+  if(ui.drawer)closeDrawer();
+});
+window.addEventListener('storage',function(e){
+  if(e.key!==KEY||!user())return;
+  const d=load();if(!d)return;
+  state=d;renderAll();
+  if(ui.drawer)openDrawer(ui.drawer);
+});
+
+function updateLines(){
+  const dept=$('#f_dept').value;
+  const sel=$('#f_line');if(!sel)return;
+  sel.innerHTML=(deptLines(dept).length?deptLines(dept):['General']).map(function(l){return '<option>'+esc(l)+'</option>';}).join('');
+  const cc=$('#f_cc');if(cc)cc.innerHTML='<option>'+esc(deptCC(dept)||'—')+'</option>';
+}
+
+/* ============================ init ============================ */
+(function init(){
+  sheetLoadCfg();
+  const hadUnsynced=!!sheetCfg.dirty;
+  const saved=load();
+  if(saved){state=saved;save();}
+  else{state=seed();save();}
+  sheetDirty=hadUnsynced;
+  sheetCfg.dirty=hadUnsynced;
+  sheetSaveCfg();
+  ui.reportMonth=monthKey(new Date());
+  let key=null;
+  try{key=sessionStorage.getItem(SESSION_KEY);}catch(e){}
+  let account=key?findUser(key):null;
+  if(!account&&key)account=findUserByUsername(key);
+  if(account){
+    ui.userKey=account.id;
+    ui.role=account.role;
+    try{sessionStorage.setItem(SESSION_KEY,account.id);}catch(e){}
+    hideAuth();
+    renderAll();
+  }else{
+    ui.userKey=null;
+    ui.role='guest';
+    hideApp();
+    renderAuth();
+  }
+  if(sheetReady())setTimeout(function(){
+    if(sheetHasUnsynced())sheetPush(false);else sheetPull(false);
+  },600);
+})();
+
+})();
+</script>
+</body>
+</html>
