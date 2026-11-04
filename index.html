@@ -1193,8 +1193,10 @@ function vDashboard(){
           '<div class="val">'+hrs(hours)+'</div><div class="sub">'+approved.length+' approved requests</div></div>'+
         '<div class="kpi"><div class="kpi-top"><span>Approved amount</span>'+icon('checkCircle')+'</div>'+
           '<div class="val">'+money(cost)+'</div><div class="sub">'+hrs(hours)+' hours cleared</div></div>'+
-        '<div class="kpi accent"><div class="kpi-top"><span>Saved amount</span>'+icon('shield')+'</div>'+
-          '<div class="val">'+money(savedC)+'</div><div class="sub">Requested − Approved · '+hrs(savedH)+' hours saved</div></div>'
+        (ui.role==='superadmin'
+          ? '<div class="kpi accent"><div class="kpi-top"><span>Saved amount</span>'+icon('shield')+'</div>'+
+            '<div class="val">'+money(savedC)+'</div><div class="sub">Requested − Approved · '+hrs(savedH)+' hours saved</div></div>'
+          : '')
       : '<div class="kpi accent"><div class="kpi-top"><span>'+(ui.role==='requester'?'Awaiting decision':'Awaiting your sign-off')+'</span>'+icon('clock')+'</div>'+
           '<div class="val">'+queue.length+'</div><div class="sub">'+money(costPending)+' estimated cost</div></div>'+
         '<div class="kpi"><div class="kpi-top"><span>Approved OT hours</span>'+icon('bolt')+'</div>'+
@@ -2181,7 +2183,7 @@ function openDecision(id,decision){
   const role=ui.role;
   if(!canDecide(r,role)){toast('This request is not awaiting your sign-off','bad');return;}
   const reject=decision==='rejected';
-  const canEdit=!reject&&(role==='opex'||role==='hr');
+  const canEdit=!reject&&(role==='head'||role==='opex'||role==='hr');
   const hoursBlock=canEdit
     ? '<div><div class="reg-head" style="margin:0 0 6px">Adjust OT hours</div>'+
         '<div class="dec-hours"><table class="tbl"><thead><tr><th>Employee</th><th class="num">Hours</th><th class="num hide-sm">Rate</th><th class="num">Amount</th></tr></thead><tbody id="decHours">'+
