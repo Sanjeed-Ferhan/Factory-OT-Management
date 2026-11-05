@@ -682,6 +682,9 @@ function load(){
 }
 function migrateRequest(r){
   r.approvals=r.approvals||{};
+  // A record with no plant slot predates the plant-head stage (legacy data).
+  // Only those are grandfathered; anything created after keeps its pending slot.
+  const legacy=!r.approvals.plant;
   ['opex','hr','plant'].forEach(function(k){if(!r.approvals[k])r.approvals[k]={state:'pending',by:null,at:null,comment:''};});
   if(!r.approvals.head){
     const acted=(r.approvals.opex.state!=='pending')||(r.approvals.hr.state!=='pending');
@@ -691,7 +694,7 @@ function migrateRequest(r){
   }
   // Legacy requests that cleared the old 3-step chain are assumed to have
   // passed the (new) plant head stage too, so history stays Approved.
-  if(!r.approvals.plant.by&&r.approvals.head.state==='approved'&&r.approvals.opex.state==='approved'&&r.approvals.hr.state==='approved'&&r.approvals.plant.state==='pending'&&r.history&&r.history.some(function(h){return h.action==='approved';})){
+  if(legacy&&r.approvals.head.state==='approved'&&r.approvals.opex.state==='approved'&&r.approvals.hr.state==='approved'){
     r.approvals.plant={state:'approved',by:'System migration',at:r.createdAt,comment:'Legacy request — approved before the plant head stage was introduced.'};
   }
   r.history=r.history||[];
@@ -1590,7 +1593,7 @@ function vSettings(){
     head:['Approve or reject requests for '+u.dept,'Gate every request before OPEX and HR review','Register requesters and employees for '+u.dept,'See department-level reports'],
     opex:['Review all requests after department head approval','Approve or reject on behalf of OPEX','Register department heads and requesters','Reset the demo dataset and export all data'],
     hr:['Review all requests after department head approval','Approve or reject on behalf of HR','Register department heads and requesters','Export all data for payroll reconciliation'],
-    plant:['Give the final sign-off after head, OPEX and HR approval','Reject any request before it is closed as approved','See every request and its full approval trail','View plant-wide reports'],
+    plant:['Give the final sign-off after head, OPEX and HR approval','Adjust OT hours before approving — every change is logged','Reject any request before it is closed as approved','View plant-wide reports'],
     superadmin:['Create OPEX, HR, plant head, department head and super admin IDs','Manage departments and the employee roster','Reset the demo dataset and export all data','View every request and report — no approval rights']
   }[ui.role]||[];
   return ''+
@@ -2208,7 +2211,7 @@ function openDecision(id,decision){
   const role=ui.role;
   if(!canDecide(r,role)){toast('This request is not awaiting your sign-off','bad');return;}
   const reject=decision==='rejected';
-  const canEdit=!reject&&(role==='head'||role==='opex'||role==='hr');
+  const canEdit=!reject&&(role==='head'||role==='opex'||role==='hr'||role==='plant');
   const hoursBlock=canEdit
     ? '<div><div class="reg-head" style="margin:0 0 6px">Adjust OT hours</div>'+
         '<div class="dec-hours"><table class="tbl"><thead><tr><th>Employee</th><th class="num">Hours</th><th class="num hide-sm">Rate</th><th class="num">Amount</th></tr></thead><tbody id="decHours">'+
@@ -2232,7 +2235,7 @@ function openDecision(id,decision){
       '<div class="notice">'+icon('shield')+'<div>You are signing as <b>'+esc(user().name)+' · '+esc(user().roleLabel)+'</b>. '+
         (reject?'A rejection closes the request immediately.'
           : role==='head'?'Your approval forwards this request to OPEX and HR.'
-          : role==='plant'?'Department head, OPEX and HR have all approved. Your sign-off is the final approval — the request becomes fully approved.'
+          : role==='plant'?'Department head, OPEX and HR have all approved. You can adjust the OT hours below, then your sign-off is the final approval — the request becomes fully approved.'
           : 'The department head has approved. OPEX and HR sign off in parallel; both are required, then the plant head signs off.')+'</div></div>'+
       hoursBlock+
       '<div class="field"><label for="decNote">Comment '+(reject?'<span class="req">*</span>':'<span class="muted">(optional)</span>')+'</label>'+
