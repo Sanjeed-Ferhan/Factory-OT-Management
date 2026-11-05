@@ -289,7 +289,7 @@
   .total-row{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;font-size:12.5px}
   .total-row b{font-size:14px;font-variant-numeric:tabular-nums}
 
-  .appr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .appr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
   .appr-card{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--surface)}
   .appr-card.approved{border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:color-mix(in srgb,var(--ok-soft) 55%,var(--surface))}
   .appr-card.rejected{border-color:color-mix(in srgb,var(--bad) 35%,transparent);background:color-mix(in srgb,var(--bad-soft) 55%,var(--surface))}
@@ -566,10 +566,11 @@ const USERS={
   habib:{key:'habib',id:'H-1103',username:'habib',name:'Engr. Habibur Rahman',role:'head',roleLabel:'Dept head',title:'Head of Maintenance',dept:'Maintenance',initials:'HB'},
   ayesha:{key:'ayesha',id:'H-1104',username:'ayesha',name:'Dr. Ayesha Siddika',role:'head',roleLabel:'Dept head',title:'Head of Quality',dept:'Quality',initials:'AS'},
   opex:{key:'opex',id:'U-2011',username:'farhana',name:'Farhana Akter',role:'opex',roleLabel:'OPEX',title:'OPEX Analyst · Operations Excellence',dept:'OPEX',initials:'FA'},
-  hr:{key:'hr',id:'U-3007',username:'sanjeed',name:'Sanjeed Rahman',role:'hr',roleLabel:'HR',title:'HR Officer · Human Capital',dept:'Human Capital',initials:'SR'}
+  hr:{key:'hr',id:'U-3007',username:'sanjeed',name:'Sanjeed Rahman',role:'hr',roleLabel:'HR',title:'HR Officer · Human Capital',dept:'Human Capital',initials:'SR'},
+  plant:{key:'plant',id:'PH-1001',username:'plant',name:'Engr. Mahmudul Hasan',role:'plant',roleLabel:'Plant Head',title:'Plant Head · Factory',dept:'Plant',initials:'MH'}
 };
 const HEAD_BY_DEPT={Production:'karim',Logistics:'nusrat',Maintenance:'habib',Quality:'ayesha'};
-const ROLE_LABEL={head:'Dept head',opex:'OPEX',hr:'HR',superadmin:'Super admin'};
+const ROLE_LABEL={head:'Dept head',opex:'OPEX',hr:'HR',plant:'Plant Head',superadmin:'Super admin'};
 const DEPTS=['Production','Logistics','Maintenance','Quality'];
 const DEPT_LINES={
   Production:['Line 1','Line 2','Line 3','Packing'],
@@ -605,8 +606,8 @@ const ROSTER=[
   {empId:'AKJ-10381',name:'Imran Kabir',designation:'Inspector',dept:'Quality',line:'Final',rate:98}
 ];
 const PS=10;
-const ROLE_OPTIONS=['requester','head','opex','hr','superadmin'];
-function roleLabelOf(role){return role==='head'?'Dept head':role==='opex'?'OPEX':role==='hr'?'HR':role==='superadmin'?'Super admin':'Requester';}
+const ROLE_OPTIONS=['requester','head','opex','hr','plant','superadmin'];
+function roleLabelOf(role){return role==='head'?'Dept head':role==='opex'?'OPEX':role==='hr'?'HR':role==='plant'?'Plant Head':role==='superadmin'?'Super admin':'Requester';}
 function seedUsers(){
   return Object.keys(USERS).map(function(k){
     return Object.assign({},USERS[k],{password:'1234',demo:true});
@@ -654,6 +655,9 @@ function normalize(d){
   if(!d.users.some(function(u){return u.role==='superadmin';})){
     d.users.unshift(Object.assign({},USERS.superadmin,{password:'1234',demo:true}));
   }
+  if(!d.users.some(function(u){return u.role==='plant';})){
+    d.users.push(Object.assign({},USERS.plant,{password:'1234',demo:true}));
+  }
   d.users.forEach(function(u){
     if(!u.password)u.password='1234';
     if(u.demo===undefined)u.demo=true;
@@ -678,12 +682,17 @@ function load(){
 }
 function migrateRequest(r){
   r.approvals=r.approvals||{};
-  ['opex','hr'].forEach(function(k){if(!r.approvals[k])r.approvals[k]={state:'pending',by:null,at:null,comment:''};});
+  ['opex','hr','plant'].forEach(function(k){if(!r.approvals[k])r.approvals[k]={state:'pending',by:null,at:null,comment:''};});
   if(!r.approvals.head){
     const acted=(r.approvals.opex.state!=='pending')||(r.approvals.hr.state!=='pending');
     r.approvals.head=acted
       ? {state:'approved',by:'System migration',at:r.createdAt,comment:'Legacy request — department head approval assumed.'}
       : {state:'pending',by:null,at:null,comment:''};
+  }
+  // Legacy requests that cleared the old 3-step chain are assumed to have
+  // passed the (new) plant head stage too, so history stays Approved.
+  if(!r.approvals.plant.by&&r.approvals.head.state==='approved'&&r.approvals.opex.state==='approved'&&r.approvals.hr.state==='approved'&&r.approvals.plant.state==='pending'&&r.history&&r.history.some(function(h){return h.action==='approved';})){
+    r.approvals.plant={state:'approved',by:'System migration',at:r.createdAt,comment:'Legacy request — approved before the plant head stage was introduced.'};
   }
   r.history=r.history||[];
 }
@@ -837,10 +846,11 @@ function seed(){
     const approvals={
       head:{state:'pending',by:null,at:null,comment:''},
       opex:{state:'pending',by:null,at:null,comment:''},
-      hr:{state:'pending',by:null,at:null,comment:''}
+      hr:{state:'pending',by:null,at:null,comment:''},
+      plant:{state:'pending',by:null,at:null,comment:''}
     };
     const history=[{at:o.createdAt,by:o.requester.name,role:'Requester',action:'submitted',note:''}];
-    ['head','opex','hr'].forEach(function(k){
+    ['head','opex','hr','plant'].forEach(function(k){
       const dec=o.decided&&o.decided[k];
       if(!dec)return;
       const actor=k==='head'?USERS[HEAD_BY_DEPT[o.dept]]:USERS[k];
@@ -868,7 +878,7 @@ function seed(){
   add({createdAt:ts(-4,14,20),requester:nazmul,dept:'Maintenance',line:'Mechanical',shift:'General (08:00-17:00)',cc:'CC-3000 Maintenance',otDate:day(-3),start:'08:00',end:'16:00',brk:60,type:'Holiday',mult:2,priority:'Normal',
     reason:'Annual compressor overhaul on the 250 HP unit. Working in the public holiday shutdown window avoids production line downtime.',
     employees:[emp('AKJ-10347',7),emp('AKJ-10355',7)],
-    decided:{head:{state:'approved',at:ts(-4,15,10),note:'Shutdown window approved and work permit issued.'},opex:{state:'approved',at:ts(-4,16,40),note:'Planned shutdown work with cost pre-approved in the maintenance budget.'},hr:{state:'approved',at:ts(-3,9,10),note:'Verified holiday allowance multiplier at 2.0x and attendance records.'}}});
+    decided:{head:{state:'approved',at:ts(-4,15,10),note:'Shutdown window approved and work permit issued.'},opex:{state:'approved',at:ts(-4,16,40),note:'Planned shutdown work with cost pre-approved in the maintenance budget.'},hr:{state:'approved',at:ts(-3,9,10),note:'Verified holiday allowance multiplier at 2.0x and attendance records.'},plant:{state:'approved',at:ts(-3,11,0),note:'Final plant head sign-off — shutdown work approved.'}}});
 
   add({createdAt:ts(-5,17,5),requester:rafiq,dept:'Production',line:'Line 2',shift:'C (22:00-06:00)',cc:'CC-1000 Production',otDate:day(-4),start:'22:00',end:'06:00',brk:30,type:'Weekday',mult:1.5,priority:'Normal',
     reason:'Night shift cover for absent operators on Line 2 to maintain continuous kiln feed and protect the daily output target.',
@@ -883,7 +893,7 @@ function seed(){
   add({createdAt:ts(-9,16,45),requester:shafiq,dept:'Logistics',line:'Dispatch',shift:'A (06:00-14:00)',cc:'CC-2000 Logistics',otDate:day(-8),start:'06:00',end:'10:00',brk:0,type:'Weekend',mult:2,priority:'Normal',
     reason:'Early morning dispatch of four trucks to Chattogram port to meet the vessel closing time.',
     employees:[emp('AKJ-10304',4),emp('AKJ-10321',4),emp('AKJ-10335',4)],
-    decided:{head:{state:'approved',at:ts(-9,17,0),note:'Port deadline confirmed with the freight forwarder.'},opex:{state:'approved',at:ts(-9,17,20),note:'Freight penalty avoidance justifies the overtime.'},hr:{state:'approved',at:ts(-8,7,15),note:'Weekend rate verified against the wage sheet.'}}});
+    decided:{head:{state:'approved',at:ts(-9,17,0),note:'Port deadline confirmed with the freight forwarder.'},opex:{state:'approved',at:ts(-9,17,20),note:'Freight penalty avoidance justifies the overtime.'},hr:{state:'approved',at:ts(-8,7,15),note:'Weekend rate verified against the wage sheet.'},plant:{state:'approved',at:ts(-8,9,0),note:'Final plant head sign-off — dispatch overtime cleared.'}}});
 
   add({createdAt:ts(-1,15,0),requester:rafiq,dept:'Production',line:'Packing',shift:'B (14:00-22:00)',cc:'CC-1000 Production',otDate:day(-1),start:'18:00',end:'22:00',brk:0,type:'Weekday',mult:1.5,priority:'Normal',
     reason:'Clear a backlog of 6,000 cartons created by a three-hour power interruption on the packing line.',
@@ -927,7 +937,7 @@ const SUBS={
   dashboard:'Overtime operations overview',
   new:'Raise a batch overtime request for a team or shift',
   requests:'Every request and its live approval state',
-  approvals:'Department head, OPEX and HR sign-off queue',
+  approvals:'Department head, OPEX, HR and plant head sign-off queue',
   registry:'Register sign-in IDs, departments and roster employees',
   reports:'Approved overtime hours and cost',
   settings:'Account, data and preferences'
@@ -951,13 +961,13 @@ function rosterList(){return (state&&state.roster)||[];}
 function canRegister(){return ui.role==='head'||ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
 function canManageDepartments(){return ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
 function assignableRoles(){
-  if(ui.role==='superadmin')return ['requester','head','opex','hr','superadmin'];
+  if(ui.role==='superadmin')return ['requester','head','opex','hr','plant','superadmin'];
   if(ui.role==='opex'||ui.role==='hr')return ['requester','head'];
   if(ui.role==='head')return ['requester'];
   return [];
 }
 function canResetData(){return ui.role==='opex'||ui.role==='superadmin';}
-function canExportAll(){return ui.role==='opex'||ui.role==='hr'||ui.role==='superadmin';}
+function canExportAll(){return ui.role==='opex'||ui.role==='hr'||ui.role==='plant'||ui.role==='superadmin';}
 function visible(){
   if(!user())return [];
   if(ui.role==='requester')return state.requests.filter(function(r){return r.requester.id===user().id;});
@@ -967,18 +977,21 @@ function visible(){
 function overall(r){
   const a=r.approvals;
   if(!a)return 'Pending';
-  if((a.head&&a.head.state==='rejected')||(a.opex&&a.opex.state==='rejected')||(a.hr&&a.hr.state==='rejected'))return 'Rejected';
-  if(a.head&&a.head.state==='approved'&&a.opex.state==='approved'&&a.hr.state==='approved')return 'Approved';
+  if((a.head&&a.head.state==='rejected')||(a.opex&&a.opex.state==='rejected')||(a.hr&&a.hr.state==='rejected')||(a.plant&&a.plant.state==='rejected'))return 'Rejected';
+  if(a.head&&a.head.state==='approved'&&a.opex.state==='approved'&&a.hr.state==='approved'&&a.plant&&a.plant.state==='approved')return 'Approved';
   return 'Pending';
 }
-function approvedCount(r){return ['head','opex','hr'].filter(function(k){return r.approvals[k]&&r.approvals[k].state==='approved';}).length;}
+function approvedCount(r){return ['head','opex','hr','plant'].filter(function(k){return r.approvals[k]&&r.approvals[k].state==='approved';}).length;}
 function reqHours(r){return (r.employees||[]).reduce(function(s,e){return s+(Number(e.hours)||0);},0);}
 function reqCost(r){return (r.employees||[]).reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0)*(Number(r.multiplier)||1.5);},0);}
+/* Stage gates: head → (OPEX ∥ HR) → plant head (final) */
+function opexHrDone(r){return r.approvals.opex.state==='approved'&&r.approvals.hr.state==='approved';}
 function canDecide(r,role){
   if(!user())return false;
-  if(role!=='head'&&role!=='opex'&&role!=='hr')return false;
+  if(role!=='head'&&role!=='opex'&&role!=='hr'&&role!=='plant')return false;
   if(overall(r)!=='Pending')return false;
   if(role==='head')return r.dept===user().dept&&r.approvals.head.state==='pending';
+  if(role==='plant')return r.approvals.head.state==='approved'&&opexHrDone(r)&&r.approvals.plant.state==='pending';
   return r.approvals.head.state==='approved'&&r.approvals[role].state==='pending';
 }
 function awaitingFor(role){
@@ -986,6 +999,7 @@ function awaitingFor(role){
     if(overall(r)!=='Pending')return false;
     if(role==='head')return r.approvals.head.state==='pending';
     if(role==='opex'||role==='hr')return r.approvals.head.state==='approved'&&r.approvals[role].state==='pending';
+    if(role==='plant')return r.approvals.head.state==='approved'&&opexHrDone(r)&&r.approvals.plant.state==='pending';
     return false;
   });
 }
@@ -1026,7 +1040,9 @@ function badge(r){
   let label=s;
   if(s==='Pending'){
     const done=approvedCount(r);
-    label=(r.approvals.head.state!=='approved')?'Pending · Head':(done?'Pending · '+done+'/3':'Pending');
+    if(r.approvals.head.state!=='approved')label='Pending · Head';
+    else if(!opexHrDone(r))label=done?'Pending · '+done+'/4':'Pending';
+    else label='Pending · Plant';
   }
   return '<span class="pill '+cls+'"><span class="dot"></span>'+label+'</span>';
 }
@@ -1036,10 +1052,11 @@ function statePill(s){
   return '<span class="pill '+cls+'"><span class="dot"></span>'+label+'</span>';
 }
 function approvalDots(r){
-  return '<span class="approval-dots" title="Dept head: '+r.approvals.head.state+' · OPEX: '+r.approvals.opex.state+' · HR: '+r.approvals.hr.state+'">'+
+  return '<span class="approval-dots" title="Dept head: '+r.approvals.head.state+' · OPEX: '+r.approvals.opex.state+' · HR: '+r.approvals.hr.state+' · Plant Head: '+r.approvals.plant.state+'">'+
     '<span class="adot '+r.approvals.head.state+'" aria-hidden="true"></span>'+
     '<span class="adot '+r.approvals.opex.state+'" aria-hidden="true"></span>'+
-    '<span class="adot '+r.approvals.hr.state+'" aria-hidden="true"></span></span>';
+    '<span class="adot '+r.approvals.hr.state+'" aria-hidden="true"></span>'+
+    '<span class="adot '+r.approvals.plant.state+'" aria-hidden="true"></span></span>';
 }
 function otTypeLabel(t){return t==='Weekend'?'Weekend (2.0x)':t==='Holiday'?'Holiday (2.0x)':'Weekday (1.5x)';}
 
@@ -1092,7 +1109,7 @@ function navItems(){
     {v:'dashboard',label:'Dashboard',ic:'dashboard'},
     {v:'new',label:'New request',ic:'plus',show:ui.role==='requester'},
     {v:'requests',label:ui.role==='requester'?'My requests':'Requests',ic:'list'},
-    {v:'approvals',label:'Approvals',ic:'checkCircle',show:ui.role==='head'||ui.role==='opex'||ui.role==='hr',badge:awaiting},
+    {v:'approvals',label:'Approvals',ic:'checkCircle',show:ui.role==='head'||ui.role==='opex'||ui.role==='hr'||ui.role==='plant',badge:awaiting},
     {v:'registry',label:'Registration',ic:'user',show:canRegister()},
     {v:'reports',label:'Reports',ic:'chart'},
     {v:'settings',label:'Settings',ic:'sliders'}
@@ -1170,7 +1187,7 @@ function vDashboard(){
 
   return ''+
   '<div class="page-head">'+
-    '<div><h2>'+monthLabel(month)+' at a glance</h2><p>'+(ui.role==='requester'?'Your overtime requests and their approval status.':ui.role==='head'?'Requests for '+esc(user().dept)+' across head, OPEX and HR review.':'Plant-wide overtime requests across head, OPEX and HR review.')+'</p></div>'+
+    '<div><h2>'+monthLabel(month)+' at a glance</h2><p>'+(ui.role==='requester'?'Your overtime requests and their approval status.':ui.role==='head'?'Requests for '+esc(user().dept)+' across head, OPEX, HR and plant head review.':'Plant-wide overtime requests across head, OPEX, HR and plant head review.')+'</p></div>'+
     '<div class="page-actions">'+
       (ui.role==='requester'
         ? '<button class="btn btn-primary" data-nav="new">'+icon('plus')+'New request</button>'
@@ -1262,7 +1279,7 @@ function vRequests(){
   const slice=rows.slice(ui.page*PS,ui.page*PS+PS);
   return ''+
   '<div class="page-head">'+
-    '<div><h2>'+(ui.role==='requester'?'My overtime requests':ui.role==='head'?'Requests · '+esc(user().dept):'All overtime requests')+'</h2><p>'+rows.length+' request'+(rows.length===1?'':'s')+' found · OPEX and HR approve in parallel</p></div>'+
+    '<div><h2>'+(ui.role==='requester'?'My overtime requests':ui.role==='head'?'Requests · '+esc(user().dept):'All overtime requests')+'</h2><p>'+rows.length+' request'+(rows.length===1?'':'s')+' found · OPEX and HR approve in parallel, then the plant head</p></div>'+
     '<div class="page-actions">'+
       (ui.role==='requester'?'<button class="btn btn-primary" data-nav="new">'+icon('plus')+'New request</button>':'')+
       '<button class="btn" data-export="requests">'+icon('download')+'Export CSV</button>'+
@@ -1320,7 +1337,7 @@ function vNew(){
   const head=headForDept(myDept);
   return ''+
   '<div class="page-head">'+
-    '<div><h2>Raise an overtime request</h2><p>One batch covers a team or shift. Your department head reviews first, then OPEX and HR sign off in parallel.</p></div>'+
+    '<div><h2>Raise an overtime request</h2><p>One batch covers a team or shift. Your department head reviews first, then OPEX and HR sign off in parallel, and the plant head gives final approval.</p></div>'+
   '</div>'+
   (head?'':'<div class="notice" style="margin-bottom:13px">'+icon('alert')+'<div><b>No department head registered.</b> This request will stay pending until OPEX or HR assigns a head for '+esc(myDept)+' in the Registry.</div></div>')+
   '<form id="otForm" novalidate>'+
@@ -1349,7 +1366,7 @@ function vNew(){
             '</div>'+
             '<div class="field"><label for="f_reason">Justification <span class="req">*</span></label>'+
               '<textarea class="input" id="f_reason" rows="3" placeholder="Explain the production need, backlog, breakdown or deadline driving this overtime."></textarea>'+
-              '<p class="help">Minimum 10 characters. Be specific — the department head, OPEX and HR all read this.</p></div>'+
+              '<p class="help">Minimum 10 characters. Be specific — the department head, OPEX, HR and plant head all read this.</p></div>'+
           '</div>'+
         '</section>'+
         '<section class="card">'+
@@ -1369,7 +1386,7 @@ function vNew(){
       '</div>'+
       '<aside class="summary card"><div class="card-pad">'+
         '<h2 style="font-size:13.5px;margin:0 0 4px">Request summary</h2>'+
-        '<p class="sub" style="margin:0 0 10px">Dept head → OPEX + HR</p>'+
+        '<p class="sub" style="margin:0 0 10px">Dept head → OPEX + HR → Plant head</p>'+
         '<div class="sum-line"><span>Employees</span><b id="sumEmp">0</b></div>'+
         '<div class="sum-line"><span>OT window</span><b id="sumWin">4.0 h</b></div>'+
         '<div class="sum-line"><span>Total OT hours</span><b id="sumHrs">0.0 h</b></div>'+
@@ -1475,7 +1492,7 @@ function reqCard(r){
       '<div><b>'+hrs(reqHours(r))+' h</b>OT hours</div>'+
       '<div><b>'+money(reqCost(r))+'</b>est. cost</div>'+
     '</div>'+
-    '<div class="appr-line">'+statePill(r.approvals.head.state)+statePill(r.approvals.opex.state)+statePill(r.approvals.hr.state)+'</div>'+
+    '<div class="appr-line">'+statePill(r.approvals.head.state)+statePill(r.approvals.opex.state)+statePill(r.approvals.hr.state)+statePill(r.approvals.plant.state)+'</div>'+
     '<footer><span class="muted" style="font-size:11px">'+esc(r.requester.name)+' · '+ago(r.createdAt)+'</span>'+
       '<button class="btn btn-sm btn-primary" data-open="'+r.id+'">Review</button></footer></article>';
 }
@@ -1491,7 +1508,9 @@ function vApprovals(){
     ? 'Requests you have already decided.'
     : (role==='head'
       ? 'These requests need department head approval before they can move to OPEX and HR.'
-      : 'Department head has approved these. OPEX and HR now sign off in parallel — both are required.');
+      : role==='plant'
+      ? 'Department head, OPEX and HR have all approved. This is the final plant head sign-off.'
+      : 'Department head has approved these. OPEX and HR now sign off in parallel — both are required, then the plant head gives final approval.');
   return ''+
   '<div class="page-head"><div><h2>'+esc(user().roleLabel)+' sign-off queue</h2><p>'+desc+'</p></div></div>'+
   '<div class="tabs" role="tablist">'+
@@ -1571,7 +1590,8 @@ function vSettings(){
     head:['Approve or reject requests for '+u.dept,'Gate every request before OPEX and HR review','Register requesters and employees for '+u.dept,'See department-level reports'],
     opex:['Review all requests after department head approval','Approve or reject on behalf of OPEX','Register department heads and requesters','Reset the demo dataset and export all data'],
     hr:['Review all requests after department head approval','Approve or reject on behalf of HR','Register department heads and requesters','Export all data for payroll reconciliation'],
-    superadmin:['Create OPEX, HR, department head and super admin IDs','Manage departments and the employee roster','Reset the demo dataset and export all data','View every request and report — no approval rights']
+    plant:['Give the final sign-off after head, OPEX and HR approval','Reject any request before it is closed as approved','See every request and its full approval trail','View plant-wide reports'],
+    superadmin:['Create OPEX, HR, plant head, department head and super admin IDs','Manage departments and the employee roster','Reset the demo dataset and export all data','View every request and report — no approval rights']
   }[ui.role]||[];
   return ''+
   '<div class="page-head"><div><h2>Settings</h2><p>Signed in as '+esc(u.name)+' · '+esc(u.roleLabel)+(u.role==='head'?' · '+esc(u.dept):'')+'</p></div></div>'+
@@ -1592,8 +1612,9 @@ function vSettings(){
         '<li><span class="flow-n">1</span><div><b>Department head</b><span>Checks operational need for their own department.</span></div></li>'+
         '<li><span class="flow-n">2</span><div><b>OPEX</b><span>Verifies budget and cost justification — after head approval.</span></div></li>'+
         '<li><span class="flow-n">3</span><div><b>HR</b><span>Verifies hours, rates and labor-law limits — in parallel with OPEX.</span></div></li>'+
+        '<li><span class="flow-n">4</span><div><b>Plant head</b><span>Final sign-off once head, OPEX and HR have all approved.</span></div></li>'+
       '</ol>'+
-      '<div class="notice" style="margin-top:12px">'+icon('shield')+'<div>A request needs <b>all three</b> sign-offs. A rejection from any stage closes it immediately as <b>Rejected</b>.</div></div>'+
+      '<div class="notice" style="margin-top:12px">'+icon('shield')+'<div>A request needs <b>all four</b> sign-offs. A rejection from any stage closes it immediately as <b>Rejected</b>.</div></div>'+
     '</div></div>'+
     '<div class="card"><div class="card-pad">'+
       '<h2 style="font-size:13.5px;margin:0 0 4px">Data &amp; session</h2>'+
@@ -1622,7 +1643,7 @@ function vSettings(){
             '<button class="btn btn-sm" data-sheet-sync>'+icon('chart')+'Sync now</button>'+
             (sheetReady()?'<button class="btn btn-sm" data-sheet-disconnect>'+icon('x')+'Disconnect</button>':'')+
           '</div>'
-        : '<p class="help" style="margin-top:10px">Only OPEX, HR or the super admin can connect the Google Sheet. Ask the central team to enable shared storage.</p>')+
+        : '<p class="help" style="margin-top:10px">Only OPEX, HR, the plant head or the super admin can connect the Google Sheet. Ask the central team to enable shared storage.</p>')+
       '<p class="help" style="margin-top:10px">Data is saved to this browser first, then pushed to the sheet (auto-sync about 1.5 s after each change). Paste the Web App URL deployed from <span class="mono">Code.gs</span> — see the setup notes in that file.</p>'+
     '</div></div>'+
     '<div class="card"><div class="card-pad">'+
@@ -1635,7 +1656,7 @@ function vSettings(){
 
 /* ============================ render: registry ============================ */
 function nextRegistryId(role){
-  const prefix=role==='superadmin'?'SA-':role==='head'?'H-':'U-';
+  const prefix=role==='superadmin'?'SA-':role==='head'?'H-':role==='plant'?'PH-':'U-';
   const lo=role==='opex'?2000:role==='hr'?3000:1000;
   let max=lo;
   allUsers().forEach(function(u){
@@ -1651,6 +1672,7 @@ function defaultTitle(role,dept){
   if(role==='head')return 'Head of '+dept;
   if(role==='requester')return 'Shift Supervisor · '+dept;
   if(role==='opex')return 'OPEX Analyst';
+  if(role==='plant')return 'Plant Head';
   if(role==='superadmin')return 'Super Admin · Central Team';
   return 'HR Officer';
 }
@@ -1670,15 +1692,15 @@ function vRegistry(){
   const allowedTabs=['users','employees'].concat(canManageDepartments()?['departments']:[],['bulk']);
   const tab=allowedTabs.indexOf(ui.regTab)>=0?ui.regTab:'users';
   const pageCopy=ui.role==='superadmin'
-    ? 'Central team control: register OPEX, HR, department heads, requesters, departments and employees.'
+    ? 'Central team control: register OPEX, HR, plant head, department heads, requesters, departments and employees.'
     : ui.role==='head'
-    ? 'Register requesters and employees for '+esc(myDept)+'. OPEX, HR and other heads are created by the central team.'
-    : 'Register department heads, requesters and roster employees. OPEX, HR and super admin IDs come from the central team.';
+    ? 'Register requesters and employees for '+esc(myDept)+'. OPEX, HR, plant head and other heads are created by the central team.'
+    : 'Register department heads, requesters and roster employees. OPEX, HR, plant head and super admin IDs come from the central team.';
   const roleNote=ui.role==='superadmin'
     ? 'A super admin can create any role, including another super admin. Department is required for requesters and heads.'
     : ui.role==='head'
     ? 'You can create requester IDs for '+esc(myDept)+' only. Department is fixed to your department.'
-    : 'You can create department head and requester IDs. OPEX, HR and super admin IDs are created by the central super admin.';
+    : 'You can create department head and requester IDs. OPEX, HR, plant head and super admin IDs are created by the central super admin.';
   const userRows=users.map(function(u){
     return '<tr><td><div class="strong">'+esc(u.name)+'</div><div class="sub">@'+esc(u.username)+'</div></td>'+
       '<td class="mono">'+esc(u.id)+'</td>'+
@@ -1783,7 +1805,7 @@ function bulkPanel(){
     users:{label:'Sign-in IDs',
       cols:'name, username, password, role, id, department',
       sample:'Md. Abdul Karim, karim2, 1234, requester, , Production',
-      note:'role: requester | head | opex | hr. Leave id blank to auto-generate. Department is required for requester and head rows.'},
+      note:'role: requester | head | opex | hr | plant | superadmin. Leave id blank to auto-generate. Department is required for requester and head rows.'},
     employees:{label:'Employees',
       cols:'emp_id, name, designation, department, line, rate',
       sample:'AKJ-10500, New Operator, Operator, Production, Line 1, 95',
@@ -1873,6 +1895,7 @@ function parseBulkRole(raw){
   if(s==='head'||s==='dept head'||s==='department head')return 'head';
   if(s==='opex')return 'opex';
   if(s==='hr'||s==='human resource'||s==='human resources')return 'hr';
+  if(s==='plant'||s==='plant head'||s==='planthead')return 'plant';
   if(s==='superadmin'||s==='super admin'||s==='admin'||s==='central admin')return 'superadmin';
   return null;
 }
@@ -1926,7 +1949,7 @@ function handleBulkImport(form){
         if(!dept||!deptDef(dept))reason.push('department missing or unknown');
       }
       if(reason.length){skipped.push({row:rowNo,reason:reason.join(', ')});return;}
-      const finalDept=role==='opex'?'OPEX':role==='hr'?'Human Capital':role==='superadmin'?'Central':dept;
+      const finalDept=role==='opex'?'OPEX':role==='hr'?'Human Capital':role==='superadmin'?'Central':role==='plant'?'Plant':dept;
       state.users.push({
         id:id,key:id,username:username,password:password,name:name,role:role,
         roleLabel:roleLabelOf(role),title:defaultTitle(role,finalDept),dept:finalDept,
@@ -2006,6 +2029,8 @@ function handleRegUser(form){
     dept='OPEX';
   }else if(role==='hr'){
     dept='Human Capital';
+  }else if(role==='plant'){
+    dept='Plant';
   }else if(role==='superadmin'){
     dept='Central';
   }
@@ -2060,7 +2085,7 @@ function regSyncRole(){
   const roleEl=$('#ruRole');if(!roleEl)return;
   const role=roleEl.value;
   const deptField=$('#ruDeptField');
-  if(deptField)deptField.style.display=(role==='opex'||role==='hr'||role==='superadmin')?'none':'';
+  if(deptField)deptField.style.display=(role==='opex'||role==='hr'||role==='plant'||role==='superadmin')?'none':'';
   const idEl=$('#ruId');
   if(idEl)idEl.value=nextRegistryId(role);
 }
@@ -2077,7 +2102,7 @@ function renderMain(){
   if(ui.view==='dashboard')html=vDashboard();
   else if(ui.view==='new'&&ui.role==='requester')html=vNew();
   else if(ui.view==='requests')html=vRequests();
-  else if(ui.view==='approvals'&&(ui.role==='head'||ui.role==='opex'||ui.role==='hr'))html=vApprovals();
+  else if(ui.view==='approvals'&&(ui.role==='head'||ui.role==='opex'||ui.role==='hr'||ui.role==='plant'))html=vApprovals();
   else if(ui.view==='registry'&&canRegister())html=vRegistry();
   else if(ui.view==='reports')html=vReports();
   else if(ui.view==='settings')html=vSettings();
@@ -2134,8 +2159,8 @@ function openDrawer(id){
         '</tbody></table></div>'+
         '<div class="total-row" style="margin-top:9px"><span>'+r.employees.length+' employees · '+hrs(reqHours(r))+' OT hours · '+r.multiplier.toFixed(1)+'x</span><b>'+money(reqCost(r))+'</b></div>'+
       '</section>'+
-      '<section class="drawer-sec"><h3>Approvals · head → OPEX + HR</h3><div class="appr-grid">'+
-        approvalCard(r,'head')+approvalCard(r,'opex')+approvalCard(r,'hr')+
+      '<section class="drawer-sec"><h3>Approvals · head → OPEX + HR → plant head</h3><div class="appr-grid">'+
+        approvalCard(r,'head')+approvalCard(r,'opex')+approvalCard(r,'hr')+approvalCard(r,'plant')+
       '</div></section>'+
       '<section class="drawer-sec"><h3>History</h3><ul class="timeline">'+
         hist.map(function(h){
@@ -2152,8 +2177,8 @@ function openDrawer(id){
         ? '<button class="btn btn-danger" data-decide="rejected" data-id="'+r.id+'">'+icon('x')+'Reject</button>'+
           '<button class="btn btn-primary" data-decide="approved" data-id="'+r.id+'">'+icon('check')+'Approve</button>'
         : '<span class="muted" style="font-size:12px">'+(s!=='Pending'?'Decision recorded':role==='requester'
-            ? (r.approvals.head.state!=='approved'?'Awaiting department head approval':'Awaiting OPEX and HR sign-off')
-            : (r.approvals.head.state!=='approved'?'Awaiting department head approval':'No action required from your role'))+'</span>')+
+            ? (r.approvals.head.state!=='approved'?'Awaiting department head approval':opexHrDone(r)?'Awaiting plant head final approval':'Awaiting OPEX and HR sign-off')
+            : (r.approvals.head.state!=='approved'?'Awaiting department head approval':opexHrDone(r)?'Awaiting plant head final approval':'No action required from your role'))+'</span>')+
     '</footer>'+
   '</aside></div>';
   document.body.classList.add('no-scroll');
@@ -2162,10 +2187,10 @@ function openDrawer(id){
 }
 function approvalCard(r,k){
   const a=r.approvals[k];
-  const labels={head:'Department head',opex:'OPEX review',hr:'HR review'};
+  const labels={head:'Department head',opex:'OPEX review',hr:'HR review',plant:'Plant head · final'};
   return '<div class="appr-card '+a.state+'">'+
     '<div class="appr-head"><span class="appr-title">'+labels[k]+'</span>'+statePill(a.state)+'</div>'+
-    '<div class="sub">'+(a.by?esc(a.by)+' · '+fmtStamp(a.at):(k==='head'?'Awaiting '+esc((headForDept(r.dept)||{}).name||'department head'):'Awaiting sign-off'))+'</div>'+
+    '<div class="sub">'+(a.by?esc(a.by)+' · '+fmtStamp(a.at):(k==='head'?'Awaiting '+esc((headForDept(r.dept)||{}).name||'department head'):k==='plant'?'Awaiting final sign-off':'Awaiting sign-off'))+'</div>'+
     (a.adjusted?'<div class="adj-note">'+icon('swap')+'<span>OT hours adjusted: '+esc(a.adjusted)+'</span></div>':'')+
     (a.comment?'<p class="appr-note">“'+esc(a.comment)+'”</p>':'')+
   '</div>';
@@ -2207,7 +2232,8 @@ function openDecision(id,decision){
       '<div class="notice">'+icon('shield')+'<div>You are signing as <b>'+esc(user().name)+' · '+esc(user().roleLabel)+'</b>. '+
         (reject?'A rejection closes the request immediately.'
           : role==='head'?'Your approval forwards this request to OPEX and HR.'
-          : 'The department head has approved. OPEX and HR sign off in parallel; both are required.')+'</div></div>'+
+          : role==='plant'?'Department head, OPEX and HR have all approved. Your sign-off is the final approval — the request becomes fully approved.'
+          : 'The department head has approved. OPEX and HR sign off in parallel; both are required, then the plant head signs off.')+'</div></div>'+
       hoursBlock+
       '<div class="field"><label for="decNote">Comment '+(reject?'<span class="req">*</span>':'<span class="muted">(optional)</span>')+'</label>'+
         '<textarea class="input" id="decNote" rows="3" placeholder="'+(reject?'Explain what must change before resubmission':'Add a note for the audit trail')+'"></textarea>'+
@@ -2279,8 +2305,10 @@ function decide(id,role,decision,note,changes){
   closeModal();
   const s=overall(r);
   if(decision==='approved'){
-    if(s==='Approved')toast(r.id+' fully approved by head, OPEX and HR','ok');
+    if(s==='Approved')toast(r.id+' fully approved — head, OPEX, HR and plant head have signed off','ok');
     else if(role==='head')toast(r.id+' approved by the department head — sent to OPEX and HR','ok');
+    else if(role==='plant')toast(r.id+' approved by the plant head','ok');
+    else if(opexHrDone(r))toast(r.id+' approved by '+ROLE_LABEL[role]+' — sent to the plant head for final approval','ok');
     else toast(r.id+' approved by '+ROLE_LABEL[role]+' — awaiting '+(role==='opex'?'HR':'OPEX'),'ok');
   }else{
     toast(r.id+' rejected by '+(role==='head'?'the department head':ROLE_LABEL[role]),'bad');
@@ -2348,7 +2376,7 @@ function confirmDialog(title,body,label,fn){
 /* ============================ actions ============================ */
 function go(view){
   if(view==='new'&&ui.role!=='requester')view='dashboard';
-  if(view==='approvals'&&ui.role!=='head'&&ui.role!=='opex'&&ui.role!=='hr')view='dashboard';
+  if(view==='approvals'&&ui.role!=='head'&&ui.role!=='opex'&&ui.role!=='hr'&&ui.role!=='plant')view='dashboard';
   if(view==='registry'&&!canRegister())view='dashboard';
   ui.view=view;
   ui.page=0;
@@ -2397,11 +2425,12 @@ function renderAuth(){
       '<div class="brand"><div class="brand-mark">'+icon('clock')+'</div>'+
         '<div><div class="brand-name">OT Request Portal</div><div class="brand-sub">Factory operations</div></div></div>'+
       '<div><h2>Overtime control for the factory floor</h2>'+
-        '<p class="lead">Raise, route and approve overtime with a clear audit trail — department head first, then OPEX and HR.</p></div>'+
+        '<p class="lead">Raise, route and approve overtime with a clear audit trail — department head first, then OPEX and HR, with the plant head giving final approval.</p></div>'+
       '<ul class="auth-points">'+
         '<li>'+icon('checkCircle')+'<div><b>Controlled access</b><br>Only signed-in supervisors can raise requests.</div></li>'+
         '<li>'+icon('users')+'<div><b>Department head gate</b><br>Nothing reaches OPEX or HR until the head signs off.</div></li>'+
         '<li>'+icon('shield')+'<div><b>Parallel OPEX + HR</b><br>Both must approve; either can reject with a written reason.</div></li>'+
+        '<li>'+icon('checkCircle')+'<div><b>Plant head final approval</b><br>Nothing is closed as approved until the plant head signs off.</div></li>'+
       '</ul>'+
       '<div class="auth-foot">OT Request Portal · demo build<br>All data stays in this browser.</div>'+
     '</section>'+
@@ -2419,7 +2448,7 @@ function renderAuth(){
         '<div class="hdr"><b>Demo accounts</b><span>Click to fill · password 1234</span></div>'+
         '<div class="demo-list">'+rows+'</div>'+
       '</div>'+
-      '<p class="auth-note">Demo authentication runs entirely in this file. For production, connect Supabase Auth, SSO or your ERP. Need an ID? Ask your department head, OPEX, HR or the central super admin.</p>'+
+      '<p class="auth-note">Demo authentication runs entirely in this file. For production, connect Supabase Auth, SSO or your ERP. Need an ID? Ask your department head, OPEX, HR, the plant head or the central super admin.</p>'+
     '</section>'+
   '</div>';
   const f=$('#loginUser');if(f)f.focus();
@@ -2509,7 +2538,7 @@ function submitRequest(form){
     employees:emps,
     requestedHours:emps.reduce(function(s,e){return s+(Number(e.hours)||0);},0),
     requestedCost:emps.reduce(function(s,e){return s+(Number(e.hours)||0)*(Number(e.rate)||0)*mult;},0),
-    approvals:{head:{state:'pending',by:null,at:null,comment:''},opex:{state:'pending',by:null,at:null,comment:''},hr:{state:'pending',by:null,at:null,comment:''}},
+    approvals:{head:{state:'pending',by:null,at:null,comment:''},opex:{state:'pending',by:null,at:null,comment:''},hr:{state:'pending',by:null,at:null,comment:''},plant:{state:'pending',by:null,at:null,comment:''}},
     history:[{at:now,by:u.name,role:'Requester',action:'submitted',note:''}]
   };
   state.requests.unshift(r);
@@ -2532,9 +2561,9 @@ function download(name,text,type){
   }catch(e){toast('Download failed in this browser','bad');}
 }
 function toCsv(rows){
-  const head=['Request ID','OT date','Department','Line','Shift','Raised by','Employees','OT hours','Est. cost (BDT)','OT type','Multiplier','Dept head','OPEX','HR','Status','Reason'];
+  const head=['Request ID','OT date','Department','Line','Shift','Raised by','Employees','OT hours','Est. cost (BDT)','OT type','Multiplier','Dept head','OPEX','HR','Plant head','Status','Reason'];
   const lines=[head].concat(rows.map(function(r){
-    return [r.id,r.otDate,r.dept,r.line,r.shift,r.requester.name,r.employees.length,hrs(reqHours(r)),Math.round(reqCost(r)),r.otType,r.multiplier,r.approvals.head.state,r.approvals.opex.state,r.approvals.hr.state,overall(r),r.reason];
+    return [r.id,r.otDate,r.dept,r.line,r.shift,r.requester.name,r.employees.length,hrs(reqHours(r)),Math.round(reqCost(r)),r.otType,r.multiplier,r.approvals.head.state,r.approvals.opex.state,r.approvals.hr.state,r.approvals.plant.state,overall(r),r.reason];
   }));
   return lines.map(function(row){
     return row.map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(',');
@@ -2553,7 +2582,7 @@ function exportMonth(){
   toast('Report for '+monthLabel(ui.reportMonth)+' exported','ok');
 }
 function exportJson(){
-  if(!canExportAll()){toast('Only OPEX, HR and the super admin can export the full dataset','bad');return;}
+  if(!canExportAll()){toast('Only OPEX, HR, the plant head or the super admin can export the full dataset','bad');return;}
   download('ot-portal-data-'+isoDate(new Date())+'.json',JSON.stringify(state,null,2),'application/json');
   toast('Full dataset exported','ok');
 }
@@ -2584,8 +2613,8 @@ function printRequest(id){
     '.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:6px}'+
     '.kv{display:flex;justify-content:space-between;border-bottom:1px dashed #e6ebf1;padding:4px 0}.kv b{font-weight:600}'+
     '.total{display:flex;justify-content:space-between;background:#f6f8fb;border:1px solid #dde4ec;border-radius:6px;padding:9px 11px;margin-top:8px;font-size:13px}'+
-    '.appr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.appr.three{grid-template-columns:1fr 1fr 1fr}.box{border:1px solid #dde4ec;border-radius:6px;padding:9px 11px}'+
-    '.sig{margin-top:46px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:26px}.sig div{border-top:1px solid #333;padding-top:5px;font-size:10px;color:#6b7c91}'+
+    '.appr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.appr.three{grid-template-columns:1fr 1fr 1fr}.appr.four{grid-template-columns:1fr 1fr 1fr 1fr}.box{border:1px solid #dde4ec;border-radius:6px;padding:9px 11px}'+
+    '.sig{margin-top:46px;display:grid;grid-template-columns:repeat(5,1fr);gap:20px}.sig div{border-top:1px solid #333;padding-top:5px;font-size:10px;color:#6b7c91}'+
     '.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:bold}'+
     '.ok{background:#e6f4ea;color:#157f3c}.pend{background:#fff3dc;color:#8a5a00}.bad{background:#fdeceb;color:#b3261e}'+
     '.printbar{position:fixed;top:14px;right:16px;display:flex;gap:8px}'+
@@ -2608,12 +2637,13 @@ function printRequest(id){
     '<h2>Justification</h2><div>'+esc(r.reason)+'</div>'+
     '<h2>Employees</h2><table><thead><tr><th>Employee</th><th>Designation</th><th class="n">Hours</th><th class="n">Rate/hr</th><th class="n">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
     '<div class="total"><span>'+r.employees.length+' employees · '+hrs(reqHours(r))+' OT hours · '+r.multiplier.toFixed(1)+'x multiplier</span><b>'+money(reqCost(r))+'</b></div>'+
-    '<h2>Approvals</h2><div class="appr three">'+
+    '<h2>Approvals</h2><div class="appr four">'+
       '<div class="box"><b>Department head</b><div class="muted">'+(r.approvals.head.by?esc(r.approvals.head.by)+' · '+fmtStamp(r.approvals.head.at):'Pending')+'</div>'+(r.approvals.head.comment?'<div>'+esc(r.approvals.head.comment)+'</div>':'')+'</div>'+
       '<div class="box"><b>OPEX review</b><div class="muted">'+(r.approvals.opex.by?esc(r.approvals.opex.by)+' · '+fmtStamp(r.approvals.opex.at):'Pending')+'</div>'+(r.approvals.opex.comment?'<div>'+esc(r.approvals.opex.comment)+'</div>':'')+'</div>'+
       '<div class="box"><b>HR review</b><div class="muted">'+(r.approvals.hr.by?esc(r.approvals.hr.by)+' · '+fmtStamp(r.approvals.hr.at):'Pending')+'</div>'+(r.approvals.hr.comment?'<div>'+esc(r.approvals.hr.comment)+'</div>':'')+'</div>'+
+      '<div class="box"><b>Plant head · final</b><div class="muted">'+(r.approvals.plant.by?esc(r.approvals.plant.by)+' · '+fmtStamp(r.approvals.plant.at):'Pending')+'</div>'+(r.approvals.plant.comment?'<div>'+esc(r.approvals.plant.comment)+'</div>':'')+'</div>'+
     '</div>'+
-    '<div class="sig"><div>Raised by</div><div>Dept head</div><div>OPEX approval</div><div>HR approval</div></div>'+
+    '<div class="sig"><div>Raised by</div><div>Dept head</div><div>OPEX approval</div><div>HR approval</div><div>Plant head approval</div></div>'+
     '</body></html>');
   w.document.close();
 }
